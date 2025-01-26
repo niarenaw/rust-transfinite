@@ -1,11 +1,16 @@
 use ordinal::Ordinal;
 
 fn main() {
-    let zero = Ordinal::new_finite(0);
+    let zero = Ordinal::zero();
     let omega = Ordinal::Transfinite {
-        exponent: Box::new(Ordinal::Finite(1)),
-        multiplier: 1,
-        addend: Box::new(Ordinal::Finite(0)),
+        exponent: Box::new(Ordinal::one()),
+        multiplier: Box::new(Ordinal::one()),
+        addend: Box::new(Ordinal::zero()),
     };
-    println!("{zero} < {}", omega.successor() + omega);
+
+    let a = zero * &omega;
+    let b = Ordinal::new_finite(2) * &omega;
+    let c = (&omega * Ordinal::Finite(2)) * &b;
+
+    println!("{a} < {b} < {c}");
 }

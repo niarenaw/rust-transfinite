@@ -1,3 +1,5 @@
+use std::ops::{Add, Mul};
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -13,7 +15,7 @@ pub enum Ordinal {
     Finite(u64),
     Transfinite {
         exponent: Box<Ordinal>,
-        multiplier: u64,
+        multiplier: Box<Ordinal>,
         addend: Box<Ordinal>,
     },
 }
@@ -25,15 +27,26 @@ impl Ordinal {
         Ordinal::Finite(n)
     }
 
-    pub fn new_transfinite(exponent: &Ordinal, multiplier: u64, addend: &Ordinal) -> Result<Self> {
-        if multiplier == 0 || matches!(*exponent, Ordinal::Finite(0)) {
+    pub fn new_transfinite(
+        exponent: &Ordinal,
+        multiplier: &Ordinal,
+        addend: &Ordinal,
+    ) -> Result<Self> {
+        if matches!(*exponent, Ordinal::Finite(0)) || matches!(*multiplier, Ordinal::Finite(0)) {
+            return Err(OrdinalError::TransfiniteOrdinalConstructionError);
+        }
+
+        let leading_cnf_term = Ordinal::Transfinite {
+            exponent: Box::new(exponent.clone()),
+            multiplier: Box::new(multiplier.clone()),
+            addend: Box::new(Self::zero()),
+        };
+
+        // validate that the addend is not larger than the first term to ensure CNF is realized
+        if leading_cnf_term < *addend {
             Err(OrdinalError::TransfiniteOrdinalConstructionError)
         } else {
-            Ok(Ordinal::Transfinite {
-                exponent: Box::new(exponent.clone()),
-                multiplier,
-                addend: Box::new(addend.clone()),
-            })
+            Ok(leading_cnf_term + addend)
         }
     }
 
@@ -54,7 +67,7 @@ impl Ordinal {
                 addend,
             } => Ordinal::Transfinite {
                 exponent: exponent.clone(),
-                multiplier: *multiplier,
+                multiplier: multiplier.clone(),
                 addend: Box::new(addend.successor()),
             },
         }
@@ -65,6 +78,22 @@ impl Ordinal {
             Ordinal::Finite(0) => true,
             Ordinal::Finite(_) => false,
             Ordinal::Transfinite { addend, .. } => addend.is_limit(),
+        }
+    }
+
+    pub fn zero() -> Self {
+        Ordinal::Finite(0)
+    }
+
+    pub fn one() -> Self {
+        Ordinal::Finite(1)
+    }
+
+    pub fn omega() -> Self {
+        Ordinal::Transfinite {
+            exponent: Box::new(Self::one()),
+            multiplier: Box::new(Self::one()),
+            addend: Box::new(Self::zero()),
         }
     }
 }
@@ -81,18 +110,18 @@ impl std::fmt::Display for Ordinal {
                 let mut result = String::new();
 
                 // Append ω (omega) with optional exponent
-                result.push_str("ω");
-                if **exponent != Ordinal::Finite(1) {
+                result.push('ω');
+                if **exponent != Self::one() {
                     result.push_str(&format!("^{}", exponent));
                 }
 
                 // Append multiplier if it's not 1
-                if *multiplier != 1 {
+                if **multiplier != Self::one() {
                     result.push_str(&format!(" * {}", multiplier));
                 }
 
                 // Append addend if it's not 0
-                if **addend != Ordinal::Finite(0) {
+                if **addend != Self::zero() {
                     result.push_str(&format!(" + {}", addend));
                 }
 
@@ -153,12 +182,12 @@ impl Ord for Ordinal {
     }
 }
 
-impl std::ops::Add for Ordinal {
+impl Add<Ordinal> for Ordinal {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs.clone()) {
-            // Case 1: Finite + Finite behaves like regulat addition
+            // Case 1: Finite + Finite behaves like regular addition
             (Ordinal::Finite(a), Ordinal::Finite(b)) => Ordinal::Finite(a + b),
 
             // Case 2: Finite + Transfinite returns the Transfinite ordinal
@@ -184,7 +213,7 @@ impl std::ops::Add for Ordinal {
                 }
             }
 
-            // Case 4: Transfinite + Transfinite (TODO)
+            // Case 4: Transfinite + Transfinite - CNF cases
             (
                 Ordinal::Transfinite {
                     exponent: e1,
@@ -208,12 +237,111 @@ impl std::ops::Add for Ordinal {
                 } else {
                     Ordinal::Transfinite {
                         exponent: e1,
-                        multiplier: (m1 + m2),
+                        multiplier: Box::new(*m1 + *m2),
                         addend: a2,
                     }
                 }
             }
         }
+    }
+}
+
+impl Add<&Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn add(self, rhs: &Ordinal) -> Self::Output {
+        self + rhs.clone()
+    }
+}
+
+impl Add<Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn add(self, rhs: Ordinal) -> Self::Output {
+        self.clone() + rhs
+    }
+}
+
+impl Add<&Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn add(self, rhs: &Ordinal) -> Self::Output {
+        self.clone() + rhs.clone()
+    }
+}
+
+impl Mul for Ordinal {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self.clone(), rhs.clone()) {
+            (Ordinal::Finite(0), _) | (_, Ordinal::Finite(0)) => Ordinal::zero(),
+            (Ordinal::Finite(a), Ordinal::Finite(b)) => Ordinal::new_finite(a * b),
+            (
+                Ordinal::Finite(_),
+                Ordinal::Transfinite {
+                    exponent,
+                    multiplier,
+                    addend,
+                },
+            ) => Ordinal::Transfinite {
+                exponent,
+                multiplier,
+                addend: Box::new(self * *addend),
+            },
+            (
+                Ordinal::Transfinite {
+                    exponent,
+                    multiplier,
+                    addend,
+                },
+                Ordinal::Finite(_),
+            ) => Ordinal::Transfinite {
+                exponent,
+                multiplier: Box::new(*multiplier * rhs),
+                addend,
+            },
+            (
+                Ordinal::Transfinite {
+                    exponent: e1,
+                    multiplier: _,
+                    addend: a1,
+                },
+                Ordinal::Transfinite {
+                    exponent: e2,
+                    multiplier: m2,
+                    addend: a2,
+                },
+            ) => Ordinal::Transfinite {
+                exponent: Box::new(*e1 + *e2),
+                multiplier: m2,
+                addend: Box::new(*a1 + *a2.clone() + self + *a2),
+            },
+        }
+    }
+}
+
+impl Mul<&Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn mul(self, rhs: &Ordinal) -> Self::Output {
+        self * rhs.clone()
+    }
+}
+
+impl Mul<Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn mul(self, rhs: Ordinal) -> Self::Output {
+        self.clone() * rhs
+    }
+}
+
+impl Mul<&Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn mul(self, rhs: &Ordinal) -> Self::Output {
+        self.clone() * rhs.clone()
     }
 }
 
@@ -223,29 +351,32 @@ mod tests {
 
     #[test]
     fn test_new_transfinite_valid() {
-        let transfinite = Ordinal::new_transfinite(&Ordinal::Finite(1), 2, &Ordinal::Finite(0));
+        let transfinite =
+            Ordinal::new_transfinite(&Ordinal::one(), &Ordinal::Finite(2), &Ordinal::zero());
         assert!(transfinite.is_ok());
     }
 
     #[test]
     fn test_new_transfinite_invalid_exponent() {
-        let transfinite = Ordinal::new_transfinite(&Ordinal::Finite(0), 2, &Ordinal::Finite(0));
+        let transfinite =
+            Ordinal::new_transfinite(&Ordinal::zero(), &Ordinal::Finite(2), &Ordinal::zero());
         assert!(transfinite.is_err());
     }
 
     #[test]
     fn test_new_transfinite_invalid_multiplier() {
-        let transfinite = Ordinal::new_transfinite(&Ordinal::Finite(1), 0, &Ordinal::Finite(0));
+        let transfinite =
+            Ordinal::new_transfinite(&Ordinal::one(), &Ordinal::zero(), &Ordinal::zero());
         assert!(transfinite.is_err());
     }
 
     #[test]
     fn test_is_finite() {
-        assert!(Ordinal::Finite(42).is_finite());
+        assert!(Ordinal::new_finite(42).is_finite());
         assert!(!Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::zero()),
         }
         .is_finite());
     }
@@ -253,9 +384,9 @@ mod tests {
     #[test]
     fn test_is_transfinite() {
         assert!(Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::zero()),
         }
         .is_transfinite());
         assert!(!Ordinal::Finite(42).is_transfinite());
@@ -266,17 +397,17 @@ mod tests {
         assert!(!Ordinal::Finite(42).is_limit());
 
         let limit = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::zero()),
         };
 
         assert!(limit.is_limit());
 
         let non_limit = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(1)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::one()),
         };
 
         assert!(!non_limit.is_limit());
@@ -284,18 +415,18 @@ mod tests {
 
     #[test]
     fn test_successor() {
-        assert_eq!(Ordinal::Finite(1).successor(), Ordinal::Finite(2));
+        assert_eq!(Ordinal::one().successor(), Ordinal::Finite(2));
 
         let transfinite = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
 
         let expected_successor = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(1)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::one()),
         };
 
         assert_eq!(transfinite.successor(), expected_successor);
@@ -303,18 +434,18 @@ mod tests {
 
     #[test]
     fn test_partial_eq() {
-        assert_eq!(Ordinal::Finite(1), Ordinal::Finite(1));
-        assert_ne!(Ordinal::Finite(1), Ordinal::Finite(2));
+        assert_eq!(Ordinal::one(), Ordinal::one());
+        assert_ne!(Ordinal::one(), Ordinal::Finite(2));
 
         let ord1 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
         let ord2 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
 
         assert_eq!(ord1, ord2);
@@ -322,25 +453,25 @@ mod tests {
 
     #[test]
     fn test_partial_ord() {
-        assert!(Ordinal::Finite(1) < Ordinal::Finite(2));
+        assert!(Ordinal::one() < Ordinal::Finite(2));
         assert!(
             Ordinal::Finite(2)
                 < Ordinal::Transfinite {
-                    exponent: Box::new(Ordinal::Finite(0)),
-                    multiplier: 1,
-                    addend: Box::new(Ordinal::Finite(0)),
+                    exponent: Box::new(Ordinal::zero()),
+                    multiplier: Box::new(Ordinal::one()),
+                    addend: Box::new(Ordinal::zero()),
                 }
         );
 
         let ord1 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::zero()),
         };
         let ord2 = Ordinal::Transfinite {
             exponent: Box::new(Ordinal::Finite(2)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
+            multiplier: Box::new(Ordinal::one()),
+            addend: Box::new(Ordinal::zero()),
         };
 
         assert!(ord1 < ord2);
@@ -351,17 +482,19 @@ mod tests {
         assert_eq!(Ordinal::Finite(42).to_string(), "42");
 
         let transfinite =
-            Ordinal::new_transfinite(&Ordinal::Finite(1), 3, &Ordinal::Finite(5)).unwrap();
+            Ordinal::new_transfinite(&Ordinal::one(), &Ordinal::Finite(3), &Ordinal::Finite(5))
+                .unwrap();
 
         assert_eq!(transfinite.to_string(), "ω * 3 + 5");
 
         let transfinite_no_addend =
-            Ordinal::new_transfinite(&Ordinal::Finite(2), 1, &Ordinal::Finite(0)).unwrap();
+            Ordinal::new_transfinite(&Ordinal::Finite(2), &Ordinal::one(), &Ordinal::zero())
+                .unwrap();
 
         assert_eq!(transfinite_no_addend.to_string(), "ω^2");
 
         let transfinite_simple =
-            Ordinal::new_transfinite(&Ordinal::Finite(1), 1, &Ordinal::Finite(0)).unwrap();
+            Ordinal::new_transfinite(&Ordinal::one(), &Ordinal::one(), &Ordinal::zero()).unwrap();
 
         assert_eq!(transfinite_simple.to_string(), "ω");
     }
@@ -369,14 +502,23 @@ mod tests {
     #[test]
     fn test_add_finite() {
         assert_eq!(Ordinal::Finite(2) + Ordinal::Finite(3), Ordinal::Finite(5));
+        assert_eq!(&Ordinal::Finite(3) + Ordinal::Finite(4), Ordinal::Finite(7));
+        assert_eq!(
+            Ordinal::Finite(21) + &Ordinal::Finite(12),
+            Ordinal::Finite(33)
+        );
+        assert_eq!(
+            &Ordinal::Finite(2) + &Ordinal::Finite(1),
+            Ordinal::Finite(3)
+        );
     }
 
     #[test]
     fn test_add_finite_to_transfinite() {
         let transfinite = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
 
         assert_eq!(Ordinal::Finite(42) + transfinite.clone(), transfinite);
@@ -385,14 +527,14 @@ mod tests {
     #[test]
     fn test_add_transfinite_to_finite() {
         let transfinite = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
 
         let expected = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
             addend: Box::new(Ordinal::Finite(42)),
         };
 
@@ -402,15 +544,15 @@ mod tests {
     #[test]
     fn test_add_transfinite_to_transfinite() {
         let transfinite1 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
+            exponent: Box::new(Ordinal::one()),
+            multiplier: Box::new(Ordinal::new_finite(2)),
+            addend: Box::new(Ordinal::zero()),
         };
 
         let transfinite2 = Ordinal::Transfinite {
             exponent: Box::new(Ordinal::Finite(2)),
-            multiplier: 3,
-            addend: Box::new(Ordinal::Finite(1)),
+            multiplier: Box::new(Ordinal::Finite(3)),
+            addend: Box::new(Ordinal::one()),
         };
 
         let result = transfinite1 + transfinite2;
