@@ -1,5 +1,6 @@
 use crate::error::{OrdinalError, Result};
 use crate::ordinal::Ordinal;
+use std::cmp::{Ord, PartialOrd};
 
 #[derive(Debug, Clone)]
 pub struct CnfTerm {
@@ -69,6 +70,20 @@ impl std::fmt::Display for CnfTerm {
         }
 
         write!(f, "{}", result)
+    }
+}
+
+impl PartialOrd for CnfTerm {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CnfTerm {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.exponent()
+            .cmp(&other.exponent())
+            .then_with(|| self.multiplicity().cmp(&other.multiplicity()))
     }
 }
 
@@ -166,5 +181,39 @@ mod tests {
         let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
         let cnf_term2 = CnfTerm::new(&one, 2).unwrap();
         assert_ne!(cnf_term1, cnf_term2);
+    }
+
+    #[test]
+    fn test_ord_same_exponent() {
+        let one = Ordinal::one();
+        let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
+        let cnf_term2 = CnfTerm::new(&one, 2).unwrap();
+        assert!(cnf_term1 < cnf_term2);
+    }
+
+    #[test]
+    fn test_ord_different_exponents() {
+        let one = Ordinal::one();
+        let two = Ordinal::new_finite(2);
+        let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
+        let cnf_term2 = CnfTerm::new(&two, 1).unwrap();
+        assert!(cnf_term1 < cnf_term2);
+    }
+
+    #[test]
+    fn test_partial_ord_same_exponent() {
+        let one = Ordinal::one();
+        let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
+        let cnf_term2 = CnfTerm::new(&one, 2).unwrap();
+        assert!(cnf_term1.partial_cmp(&cnf_term2).unwrap() == std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn test_partial_ord_different_exponents() {
+        let one = Ordinal::one();
+        let two = Ordinal::new_finite(2);
+        let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
+        let cnf_term2 = CnfTerm::new(&two, 1).unwrap();
+        assert!(cnf_term1.partial_cmp(&cnf_term2).unwrap() == std::cmp::Ordering::Less);
     }
 }

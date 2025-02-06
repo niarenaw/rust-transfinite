@@ -5,9 +5,6 @@ fn main() {
     let one = Ordinal::one();
     let omega = Ordinal::omega();
 
-    let s = zero == one;
-    let t = omega == omega;
-
-    println!("{zero} == {one}: {s}");
-    println!("{omega} == {one}: {t}");
+    println!("{zero} < {one}");
+    println!("{omega} < {one}");
 }

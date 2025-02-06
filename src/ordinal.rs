@@ -1,3 +1,6 @@
+use std::cmp::{Ord, PartialOrd};
+use std::ops::Add;
+
 use crate::cnfterm::CnfTerm;
 use crate::error::{OrdinalError, Result};
 
@@ -128,6 +131,90 @@ impl PartialEq for Ordinal {
 
 impl Eq for Ordinal {}
 
+impl PartialOrd for Ordinal {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Ordinal {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (Ordinal::Finite(m), Ordinal::Finite(n)) => m.cmp(n),
+            (Ordinal::Finite(_), Ordinal::Transfinite(_)) => std::cmp::Ordering::Less,
+            (Ordinal::Transfinite(_), Ordinal::Finite(_)) => std::cmp::Ordering::Greater,
+            (Ordinal::Transfinite(terms_lhs), Ordinal::Transfinite(terms_rhs)) => {
+                for (term_lhs, term_rhs) in terms_lhs.iter().zip(terms_rhs.iter()) {
+                    let cmp = term_lhs.cmp(term_rhs);
+                    if cmp != std::cmp::Ordering::Equal {
+                        return cmp;
+                    }
+                }
+                terms_lhs.len().cmp(&terms_rhs.len())
+            }
+        }
+    }
+}
+
+impl Add<Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (&self, &rhs) {
+            // Case 1: Finite + Finite behaves like integer addition
+            (Ordinal::Finite(m), Ordinal::Finite(n)) => Ordinal::new_finite(m + n),
+
+            // Case 2: Finite + Transfinite returns the Transfinite ordinal
+            (Ordinal::Finite(_), Ordinal::Transfinite(_)) => rhs,
+
+            // Case 3: Transfinite + Finite adds finite to the trailing cnf term
+            (Ordinal::Transfinite(terms), Ordinal::Finite(n)) => {
+                let mut new_terms = terms.clone();
+                if let Some(mut last_term) = new_terms.pop() {
+                    for _ in 0..*n {
+                        last_term = last_term.successor()
+                    }
+                    new_terms.push(last_term);
+                }
+                Ordinal::new_transfinite(&new_terms).unwrap()
+            }
+
+            // Case 4: Transfinite + Transfinite - CNF cases
+            (Ordinal::Transfinite(terms_lhs), Ordinal::Transfinite(terms_rhs)) => {
+                let leading_exponent_lhs = self.leading_cnf_term().unwrap().exponent();
+
+                let leading_term_rhs = rhs.leading_cnf_term().unwrap();
+                let leading_exponent_rhs = leading_term_rhs.exponent();
+
+                if leading_exponent_lhs < leading_exponent_rhs {
+                    rhs
+                } else {
+                    let mut index_lhs = terms_lhs.len() - 1;
+                    while index_lhs > 0 && terms_lhs[index_lhs].exponent() < leading_exponent_rhs {
+                        index_lhs -= 1;
+                    }
+
+                    if terms_lhs[index_lhs].exponent() == leading_exponent_rhs {
+                        let mut new_terms = terms_lhs[..index_lhs].to_vec();
+                        new_terms.push(
+                            CnfTerm::new(
+                                &leading_exponent_rhs,
+                                terms_lhs[index_lhs].multiplicity()
+                                    + leading_term_rhs.multiplicity(),
+                            )
+                            .unwrap(),
+                        );
+                        new_terms.extend(terms_rhs[1..].to_vec());
+                        Ordinal::new_transfinite(&new_terms).unwrap()
+                    } else {
+                        todo!()
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -199,5 +286,21 @@ mod tests {
 
         let omega = Ordinal::omega();
         assert!(!omega.is_finite());
+    }
+
+    #[test]
+    fn test_ordinal_eq() {
+        let zero = Ordinal::zero();
+        let another_zero = Ordinal::new_finite(0);
+        assert_eq!(zero, another_zero);
+
+        let one = Ordinal::one();
+        let another_one = Ordinal::new_finite(1);
+        assert_eq!(one, another_one);
+
+        let omega = Ordinal::omega();
+        let another_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 1).unwrap()]).unwrap();
+        assert_eq!(omega, another_omega);
     }
 }
