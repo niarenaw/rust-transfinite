@@ -5,6 +5,6 @@ fn main() {
     let one = Ordinal::one();
     let omega = Ordinal::omega();
 
-    println!("{zero} < {one}");
-    println!("{omega} < {one}");
+    let om1 = one.clone() + omega.clone() + one.clone() + zero + one.clone() + omega;
+    println!("{}", om1)
 }

@@ -40,10 +40,6 @@ impl CnfTerm {
         !self.is_limit()
     }
 
-    pub fn successor(&self) -> Self {
-        CnfTerm::new(&self.exponent, self.multiplicity).unwrap()
-    }
-
     pub fn is_finite(&self) -> bool {
         matches!(self.exponent, Ordinal::Finite(0))
     }
@@ -119,14 +115,6 @@ mod tests {
         let one = Ordinal::one();
         let cnf_term = CnfTerm::new(&one, 1).unwrap();
         assert!(!cnf_term.is_successor());
-    }
-
-    #[test]
-    fn test_cnf_term_successor() {
-        let one = Ordinal::one();
-        let cnf_term = CnfTerm::new(&one, 1).unwrap();
-        let successor = cnf_term.successor();
-        assert_eq!(successor, cnf_term);
     }
 
     #[test]

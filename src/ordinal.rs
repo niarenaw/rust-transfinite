@@ -170,11 +170,14 @@ impl Add<Ordinal> for Ordinal {
             // Case 3: Transfinite + Finite adds finite to the trailing cnf term
             (Ordinal::Transfinite(terms), Ordinal::Finite(n)) => {
                 let mut new_terms = terms.clone();
-                if let Some(mut last_term) = new_terms.pop() {
-                    for _ in 0..*n {
-                        last_term = last_term.successor()
+                if let Some(last_term) = new_terms.pop() {
+                    if last_term.is_finite() {
+                        let new_last_term = CnfTerm::new_finite(last_term.multiplicity() + n);
+                        new_terms.push(new_last_term);
+                    } else {
+                        new_terms.push(last_term);
+                        new_terms.push(CnfTerm::new_finite(*n));
                     }
-                    new_terms.push(last_term);
                 }
                 Ordinal::new_transfinite(&new_terms).unwrap()
             }
@@ -207,7 +210,9 @@ impl Add<Ordinal> for Ordinal {
                         new_terms.extend(terms_rhs[1..].to_vec());
                         Ordinal::new_transfinite(&new_terms).unwrap()
                     } else {
-                        todo!()
+                        let mut new_terms = terms_lhs[..index_lhs + 1].to_vec();
+                        new_terms.extend(terms_rhs.clone());
+                        Ordinal::new_transfinite(&new_terms).unwrap()
                     }
                 }
             }
