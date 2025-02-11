@@ -220,6 +220,30 @@ impl Add<Ordinal> for Ordinal {
     }
 }
 
+impl Add<&Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn add(self, rhs: &Ordinal) -> Self::Output {
+        self + rhs.clone()
+    }
+}
+
+impl Add<Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn add(self, rhs: Ordinal) -> Self::Output {
+        self.clone() + rhs
+    }
+}
+
+impl Add<&Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn add(self, rhs: &Ordinal) -> Self::Output {
+        self.clone() + rhs.clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
