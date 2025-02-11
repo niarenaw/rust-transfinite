@@ -5,6 +5,6 @@ fn main() {
     let one = Ordinal::one();
     let omega = Ordinal::omega();
 
-    let om1 = &one + omega.clone() + one.clone() + zero + one.clone() + omega;
+    let om1 = (one.clone() + one.clone()) * (omega + one.clone()) * (one.clone() + one.clone());
     println!("{}", om1);
 }

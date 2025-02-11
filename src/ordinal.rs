@@ -1,5 +1,5 @@
 use std::cmp::{Ord, PartialOrd};
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 use crate::cnfterm::CnfTerm;
 use crate::error::{OrdinalError, Result};
@@ -241,6 +241,91 @@ impl Add<&Ordinal> for &Ordinal {
 
     fn add(self, rhs: &Ordinal) -> Self::Output {
         self.clone() + rhs.clone()
+    }
+}
+
+impl Mul<Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (&self, &rhs) {
+            (Ordinal::Finite(0), _) | (_, Ordinal::Finite(0)) => Ordinal::zero(),
+            (Ordinal::Finite(m), Ordinal::Finite(n)) => Ordinal::new_finite(m * n),
+            (Ordinal::Finite(m), Ordinal::Transfinite(terms_rhs)) => {
+                let mut new_terms = terms_rhs.clone();
+                let last_term_rhs = new_terms.pop().unwrap();
+                if last_term_rhs.is_finite() {
+                    new_terms.push(CnfTerm::new_finite(last_term_rhs.multiplicity() * m));
+                } else {
+                    new_terms.push(last_term_rhs);
+                }
+                Ordinal::new_transfinite(&new_terms).unwrap()
+            }
+            (Ordinal::Transfinite(terms_lhs), Ordinal::Finite(n)) => {
+                let mut new_terms = terms_lhs.clone();
+                new_terms[0] =
+                    CnfTerm::new(&new_terms[0].exponent(), &new_terms[0].multiplicity() * n)
+                        .unwrap();
+                Ordinal::new_transfinite(&new_terms).unwrap()
+            }
+            (Ordinal::Transfinite(_), Ordinal::Transfinite(terms_rhs)) => {
+                let mut new_terms: Vec<CnfTerm> = Vec::new();
+                let leading_term_rhs_exponent = &self.leading_cnf_term().unwrap().exponent();
+
+                if rhs.is_limit() {
+                    new_terms.extend(terms_rhs.iter().map(|term| {
+                        CnfTerm::new(
+                            &(term.exponent() + leading_term_rhs_exponent),
+                            term.multiplicity(),
+                        )
+                        .unwrap()
+                    }));
+                } else {
+                    new_terms.extend(terms_rhs.iter().take(terms_rhs.len() - 1).map(|term| {
+                        CnfTerm::new(
+                            &(term.exponent() + leading_term_rhs_exponent),
+                            term.multiplicity(),
+                        )
+                        .unwrap()
+                    }));
+                    let leading_term_lhs_mult = self.leading_cnf_term().unwrap().multiplicity();
+                    let trailing_term_rhs_mult = rhs.trailing_cnf_term().unwrap().multiplicity();
+                    new_terms.push(
+                        CnfTerm::new(
+                            leading_term_rhs_exponent,
+                            leading_term_lhs_mult * trailing_term_rhs_mult,
+                        )
+                        .unwrap(),
+                    );
+                }
+
+                Ordinal::new_transfinite(&new_terms).unwrap()
+            }
+        }
+    }
+}
+
+impl Mul<&Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn mul(self, rhs: &Ordinal) -> Self::Output {
+        self * rhs.clone()
+    }
+}
+
+impl Mul<Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn mul(self, rhs: Ordinal) -> Self::Output {
+        self.clone() * rhs
+    }
+}
+
+impl Mul<&Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn mul(self, rhs: &Ordinal) -> Self::Output {
+        self.clone() * rhs.clone()
     }
 }
 
