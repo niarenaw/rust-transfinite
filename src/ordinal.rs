@@ -380,6 +380,30 @@ impl Pow<Ordinal> for Ordinal {
     }
 }
 
+impl Pow<&Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn pow(self, rhs: &Ordinal) -> Self::Output {
+        self.pow(rhs.clone())
+    }
+}
+
+impl Pow<Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn pow(self, rhs: Ordinal) -> Self::Output {
+        self.clone().pow(rhs)
+    }
+}
+
+impl Pow<&Ordinal> for &Ordinal {
+    type Output = Ordinal;
+
+    fn pow(self, rhs: &Ordinal) -> Self::Output {
+        self.clone().pow(rhs.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -467,5 +491,110 @@ mod tests {
         let another_omega =
             Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 1).unwrap()]).unwrap();
         assert_eq!(omega, another_omega);
+    }
+
+    #[test]
+    fn test_ordinal_pow() {
+        // Test finite ordinal powers
+        let two = Ordinal::new_finite(2);
+        let three = Ordinal::new_finite(3);
+        assert_eq!(two.clone().pow(three.clone()), Ordinal::new_finite(8));
+        assert_eq!(three.clone().pow(two.clone()), Ordinal::new_finite(9));
+
+        // Test edge cases
+        let zero = Ordinal::zero();
+        let one = Ordinal::one();
+        assert_eq!(zero.clone().pow(one.clone()), Ordinal::zero());
+        assert_eq!(one.clone().pow(zero.clone()), Ordinal::one());
+        assert_eq!(one.clone().pow(one.clone()), Ordinal::one());
+        assert_eq!(two.clone().pow(zero.clone()), Ordinal::one());
+
+        // Test transfinite ordinal powers
+        let omega = Ordinal::omega();
+        let omega_squared =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
+                .unwrap();
+        assert_eq!(omega.clone().pow(two.clone()), omega_squared);
+
+        // Test omega^omega
+        let omega_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
+
+        // Test finite * transfinite power
+        let two_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        assert_eq!(two.clone().pow(omega.clone()), two_omega);
+    }
+
+    #[test]
+    fn test_ordinal_add() {
+        // Test finite ordinal addition
+        let two = Ordinal::new_finite(2);
+        let three = Ordinal::new_finite(3);
+        assert_eq!(two.clone() + three.clone(), Ordinal::new_finite(5));
+        assert_eq!(three.clone() + two.clone(), Ordinal::new_finite(5));
+
+        // Test edge cases
+        let zero = Ordinal::zero();
+        let one = Ordinal::one();
+        assert_eq!(zero.clone() + one.clone(), Ordinal::one());
+        assert_eq!(one.clone() + zero.clone(), Ordinal::one());
+        assert_eq!(zero.clone() + zero.clone(), Ordinal::zero());
+
+        // Test transfinite ordinal addition
+        let omega = Ordinal::omega();
+        let omega_plus_one = Ordinal::new_transfinite(&vec![
+            CnfTerm::new(&Ordinal::one(), 1).unwrap(),
+            CnfTerm::new_finite(1),
+        ])
+        .unwrap();
+        assert_eq!(omega.clone() + one.clone(), omega_plus_one);
+
+        // Test omega + omega
+        let two_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        assert_eq!(omega.clone() + omega.clone(), two_omega);
+
+        // Test finite + transfinite
+        let omega_plus_two = omega.successor().successor();
+        assert_eq!(two.clone() + omega.clone(), omega);
+        assert_eq!(omega.clone() + two.clone(), omega_plus_two);
+    }
+
+    #[test]
+    fn test_ordinal_mul() {
+        // Test finite ordinal multiplication
+        let two = Ordinal::new_finite(2);
+        let three = Ordinal::new_finite(3);
+        assert_eq!(two.clone() * three.clone(), Ordinal::new_finite(6));
+        assert_eq!(three.clone() * two.clone(), Ordinal::new_finite(6));
+
+        // Test edge cases
+        let zero = Ordinal::zero();
+        let one = Ordinal::one();
+        assert_eq!(zero.clone() * one.clone(), Ordinal::zero());
+        assert_eq!(one.clone() * zero.clone(), Ordinal::zero());
+        assert_eq!(one.clone() * one.clone(), Ordinal::one());
+        assert_eq!(two.clone() * one.clone(), Ordinal::new_finite(2));
+        assert_eq!(one.clone() * two.clone(), Ordinal::new_finite(2));
+
+        // Test transfinite ordinal multiplication
+        let omega = Ordinal::omega();
+        let omega_times_two =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        assert_eq!(omega.clone() * two.clone(), omega_times_two);
+
+        // Test omega * omega
+        let omega_squared =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
+                .unwrap();
+        assert_eq!(omega.clone() * omega.clone(), omega_squared);
+
+        // Test finite * transfinite
+        let two_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        assert_eq!(two.clone() * omega.clone(), omega);
+        assert_eq!(omega.clone() * two.clone(), two_omega);
     }
 }

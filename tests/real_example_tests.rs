@@ -4,6 +4,7 @@
 #[cfg(test)]
 mod tests {
 
+    use num_traits::Pow;
     use ordinal::*;
 
     #[test]
@@ -30,7 +31,20 @@ mod tests {
         assert_eq!(expr, expected)
     }
 
+    #[test]
     fn exponentiation() {
-        todo!()
+        let base = Ordinal::new_transfinite(&vec![
+            CnfTerm::new(&Ordinal::new_finite(5), 1).unwrap(),
+            CnfTerm::new(&Ordinal::new_finite(3), 1).unwrap(),
+        ])
+        .unwrap();
+        let expr = base.pow(Ordinal::new_finite(3));
+        let expected = Ordinal::new_transfinite(&vec![
+            CnfTerm::new(&Ordinal::new_finite(15), 1).unwrap(),
+            CnfTerm::new(&Ordinal::new_finite(13), 1).unwrap(),
+        ])
+        .unwrap();
+
+        assert_eq!(expr, expected)
     }
 }
