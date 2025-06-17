@@ -370,11 +370,21 @@ impl Pow<Ordinal> for Ordinal {
             }
 
             (Ordinal::Finite(m), Ordinal::Transfinite(terms_rhs)) => {
-                let mut new_terms = terms_rhs.clone();
-                new_terms[0] =
-                    CnfTerm::new(&new_terms[0].exponent(), &new_terms[0].multiplicity() * m)
-                        .unwrap();
-                Ordinal::new_transfinite(&new_terms).unwrap()
+                let mut distributed = Ordinal::one();
+                for term in terms_rhs {
+                    if term.is_finite() {
+                        distributed = distributed * Ordinal::new_finite(m.pow(term.multiplicity()));
+                    } else {
+                        distributed = distributed
+                            * Ordinal::new_transfinite(&vec![CnfTerm::new(
+                                &Ordinal::new_finite(term.multiplicity()),
+                                1,
+                            )
+                            .unwrap()])
+                            .unwrap();
+                    }
+                }
+                distributed
             }
         }
     }
@@ -522,9 +532,7 @@ mod tests {
         assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
 
         // Test finite * transfinite power
-        let two_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
-        assert_eq!(two.clone().pow(omega.clone()), two_omega);
+        assert_eq!(two.clone().pow(omega.clone()), omega);
     }
 
     #[test]
