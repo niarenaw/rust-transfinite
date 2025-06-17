@@ -5,11 +5,11 @@ use std::cmp::{Ord, PartialOrd};
 #[derive(Debug, Clone)]
 pub struct CnfTerm {
     exponent: Ordinal,
-    multiplicity: u64,
+    multiplicity: u32,
 }
 
 impl CnfTerm {
-    pub fn new(exponent: &Ordinal, multiplicity: u64) -> Result<Self> {
+    pub fn new(exponent: &Ordinal, multiplicity: u32) -> Result<Self> {
         if multiplicity == 0 {
             return Err(OrdinalError::CnfTermConstructionError);
         }
@@ -20,7 +20,7 @@ impl CnfTerm {
         })
     }
 
-    pub fn new_finite(n: u64) -> Self {
+    pub fn new_finite(n: u32) -> Self {
         CnfTerm::new(&Ordinal::Finite(0), n).unwrap()
     }
 
@@ -28,7 +28,7 @@ impl CnfTerm {
         self.exponent.clone()
     }
 
-    pub fn multiplicity(&self) -> u64 {
+    pub fn multiplicity(&self) -> u32 {
         self.multiplicity
     }
 

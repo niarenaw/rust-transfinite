@@ -1,3 +1,4 @@
+use num_traits::Pow;
 use std::cmp::{Ord, PartialOrd};
 use std::ops::{Add, Mul};
 
@@ -6,12 +7,12 @@ use crate::error::{OrdinalError, Result};
 
 #[derive(Debug, Clone)]
 pub enum Ordinal {
-    Finite(u64),
+    Finite(u32),
     Transfinite(Vec<CnfTerm>),
 }
 
 impl Ordinal {
-    pub fn new_finite(n: u64) -> Self {
+    pub fn new_finite(n: u32) -> Self {
         Ordinal::Finite(n)
     }
 
@@ -40,6 +41,7 @@ impl Ordinal {
     pub fn is_successor(&self) -> bool {
         !self.is_limit()
     }
+
     pub fn successor(&self) -> Self {
         match self {
             Ordinal::Finite(n) => Ordinal::new_finite(n + 1),
@@ -326,6 +328,55 @@ impl Mul<&Ordinal> for &Ordinal {
 
     fn mul(self, rhs: &Ordinal) -> Self::Output {
         self.clone() * rhs.clone()
+    }
+}
+
+impl Pow<Ordinal> for Ordinal {
+    type Output = Self;
+
+    fn pow(self, rhs: Self) -> Self::Output {
+        match (&self, &rhs) {
+            (_, Ordinal::Finite(0)) | (Ordinal::Finite(1), _) => Ordinal::one(),
+            (_, Ordinal::Finite(1)) => self,
+            (Ordinal::Finite(0), _) => Ordinal::zero(),
+            (Ordinal::Finite(m), Ordinal::Finite(n)) => Ordinal::new_finite(m.pow(*n)),
+
+            (Ordinal::Transfinite(_), _) => {
+                if rhs.is_limit() {
+                    let leading_term_lhs = self.leading_cnf_term().unwrap();
+                    let leading_exponent_lhs = leading_term_lhs.exponent();
+                    let new_exponent = leading_exponent_lhs * rhs;
+                    Ordinal::new_transfinite(&vec![CnfTerm::new(&new_exponent, 1).unwrap()])
+                        .unwrap()
+                } else {
+                    if let Ordinal::Finite(n) = rhs {
+                        // TODO: use repeated squaring for better performance
+                        let mut successive_multiplications = self.clone();
+                        for _ in 1..n {
+                            successive_multiplications = successive_multiplications * self.clone();
+                        }
+                        successive_multiplications
+                    } else {
+                        let mut distributed = Ordinal::one();
+                        for term in rhs.cnf_terms().unwrap().iter() {
+                            distributed = distributed
+                                * self
+                                    .clone()
+                                    .pow(Ordinal::new_transfinite(&vec![term.clone()]).unwrap());
+                        }
+                        distributed
+                    }
+                }
+            }
+
+            (Ordinal::Finite(m), Ordinal::Transfinite(terms_rhs)) => {
+                let mut new_terms = terms_rhs.clone();
+                new_terms[0] =
+                    CnfTerm::new(&new_terms[0].exponent(), &new_terms[0].multiplicity() * m)
+                        .unwrap();
+                Ordinal::new_transfinite(&new_terms).unwrap()
+            }
+        }
     }
 }
 
