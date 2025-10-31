@@ -1,14 +1,14 @@
 [package]
 name = "transfinite"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["niarenaw"]
 license = "MIT OR Apache-2.0"
 description = "Transfinite ordinal arithmetic library supporting ordinals up to epsilon-zero (ε₀) using Cantor Normal Form"
 readme = "README.md"
-repository = "https://github.com/niarenaw/transfinite"
+repository = "https://github.com/niarenaw/rust-transfinite"
 documentation = "https://docs.rs/transfinite"
-homepage = "https://github.com/niarenaw/transfinite"
+homepage = "https://github.com/niarenaw/rust-transfinite"
 keywords = ["ordinal", "transfinite", "mathematics", "cantor", "ordinal-arithmetic"]
 categories = ["mathematics", "algorithms", "no-std"]
 rust-version = "1.70"
