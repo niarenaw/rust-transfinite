@@ -1,290 +1,208 @@
-use thiserror::Error;
+//! Transfinite ordinal arithmetic library supporting ordinals up to ε₀.
+//!
+//! This library implements ordinal number arithmetic using [Cantor Normal Form](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form) (CNF)
+//! representation. Ordinals extend natural numbers to describe order types of
+//! well-ordered sets, including infinite ordinals like ω (omega).
+//!
+//! # What Are Ordinals?
+//!
+//! Ordinal numbers measure "position" in a well-ordered sequence, extending
+//! beyond finite numbers into the transfinite:
+//!
+//! - 0, 1, 2, ... (finite ordinals)
+//! - ω (omega - first infinite ordinal)
+//! - ω+1, ω+2, ... (successors of omega)
+//! - ω·2, ω·3, ... (finite multiples of omega)
+//! - ω², ω³, ... (powers of omega)
+//! - ω^ω, ω^(ω^ω), ... (exponential towers)
+//! - ε₀ (epsilon-zero - first fixed point of ω^x = x)
+//!
+//! # Quick Start
+//!
+//! ```
+//! use ordinal::Ordinal;
+//! use num_traits::Pow;
+//!
+//! // Create finite and transfinite ordinals
+//! let five = Ordinal::new_finite(5);
+//! let omega = Ordinal::omega();
+//!
+//! // Perform ordinal arithmetic
+//! let sum = omega.clone() + five.clone();
+//! let product = omega.clone() * Ordinal::new_finite(2);
+//! let power = omega.clone().pow(Ordinal::new_finite(2));
+//!
+//! println!("ω + 5 = {}", sum);        // Prints: ω + 5
+//! println!("ω · 2 = {}", product);    // Prints: ω * 2
+//! println!("ω² = {}", power);         // Prints: ω^2
+//! ```
+//!
+//! # Ordinal Arithmetic
+//!
+//! Ordinal arithmetic differs fundamentally from standard arithmetic:
+//!
+//! ## Non-Commutativity
+//!
+//! Addition and multiplication are **not commutative**:
+//!
+//! ```
+//! use ordinal::Ordinal;
+//!
+//! let one = Ordinal::one();
+//! let omega = Ordinal::omega();
+//!
+//! // Addition: 1 + ω = ω, but ω + 1 ≠ ω
+//! assert_eq!(one.clone() + omega.clone(), omega);
+//! assert_ne!(omega.clone() + one.clone(), omega);
+//!
+//! // Multiplication: 2 · ω = ω, but ω · 2 ≠ ω
+//! let two = Ordinal::new_finite(2);
+//! assert_eq!(two.clone() * omega.clone(), omega);
+//! assert_ne!(omega.clone() * two.clone(), omega);
+//! ```
+//!
+//! ## Associativity
+//!
+//! Addition and multiplication **are associative**:
+//!
+//! ```
+//! use ordinal::Ordinal;
+//!
+//! let a = Ordinal::omega();
+//! let b = Ordinal::new_finite(5);
+//! let c = Ordinal::new_finite(3);
+//!
+//! // (a + b) + c = a + (b + c)
+//! assert_eq!((a.clone() + b.clone()) + c.clone(), a.clone() + (b.clone() + c.clone()));
+//!
+//! // (a · b) · c = a · (b · c)
+//! assert_eq!((a.clone() * b.clone()) * c.clone(), a.clone() * (b.clone() * c.clone()));
+//! ```
+//!
+//! # Cantor Normal Form Representation
+//!
+//! Every ordinal α < ε₀ can be uniquely expressed in Cantor Normal Form:
+//!
+//! ```text
+//! α = ω^β₁·c₁ + ω^β₂·c₂ + ... + ω^βₙ·cₙ
+//! ```
+//!
+//! where β₁ > β₂ > ... > βₙ are ordinals and c₁, c₂, ..., cₙ are positive finite numbers.
+//!
+//! This library uses CNF internally for efficient arithmetic:
+//!
+//! ```
+//! use ordinal::{Ordinal, CnfTerm};
+//!
+//! // Construct ω² + ω·3 + 7 using CNF terms
+//! let ordinal = Ordinal::new_transfinite(&vec![
+//!     CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),  // ω²
+//!     CnfTerm::new(&Ordinal::one(), 3).unwrap(),          // ω·3
+//!     CnfTerm::new_finite(7),                             // 7
+//! ]).unwrap();
+//!
+//! println!("{}", ordinal);  // Prints: ω^2 + ω * 3 + 7
+//! ```
+//!
+//! # Limit vs Successor Ordinals
+//!
+//! Ordinals are classified as either:
+//!
+//! - **Limit ordinals**: No immediate predecessor (e.g., 0, ω, ω², ω^ω)
+//! - **Successor ordinals**: Form α+1 for some ordinal α (e.g., 1, 5, ω+1)
+//!
+//! ```
+//! use ordinal::Ordinal;
+//!
+//! let zero = Ordinal::zero();
+//! let omega = Ordinal::omega();
+//!
+//! assert!(zero.is_limit());      // 0 is a limit
+//! assert!(omega.is_limit());     // ω is a limit
+//!
+//! let one = zero.successor();
+//! assert!(one.is_successor());   // 1 = 0+1 is a successor
+//!
+//! let omega_plus_one = omega.successor();
+//! assert!(omega_plus_one.is_successor());  // ω+1 is a successor
+//! ```
+//!
+//! # Core Types
+//!
+//! - [`Ordinal`] - Main ordinal number type (finite or transfinite)
+//! - [`CnfTerm`] - A term in Cantor Normal Form (ω^exponent · multiplicity)
+//! - [`OrdinalError`] - Error type for construction failures
+//! - [`Result<T>`] - Type alias for `Result<T, OrdinalError>`
+//!
+//! # Examples
+//!
+//! ## Basic Arithmetic
+//!
+//! ```
+//! use ordinal::Ordinal;
+//!
+//! let two = Ordinal::new_finite(2);
+//! let three = Ordinal::new_finite(3);
+//! let omega = Ordinal::omega();
+//!
+//! // Finite arithmetic works as expected
+//! assert_eq!(two.clone() + three.clone(), Ordinal::new_finite(5));
+//! assert_eq!(two.clone() * three.clone(), Ordinal::new_finite(6));
+//!
+//! // Transfinite arithmetic follows ordinal rules
+//! assert_eq!(omega.clone() + Ordinal::one(), omega.clone().successor());
+//! ```
+//!
+//! ## Exponentiation
+//!
+//! ```
+//! use ordinal::Ordinal;
+//! use num_traits::Pow;
+//!
+//! let omega = Ordinal::omega();
+//! let two = Ordinal::new_finite(2);
+//!
+//! // ω² = ω · ω
+//! let omega_squared = omega.clone().pow(two.clone());
+//!
+//! // ω^ω (omega to the omega)
+//! let omega_omega = omega.clone().pow(omega.clone());
+//! ```
+//!
+//! ## Comparison
+//!
+//! ```
+//! use ordinal::Ordinal;
+//!
+//! let five = Ordinal::new_finite(5);
+//! let million = Ordinal::new_finite(1_000_000);
+//! let omega = Ordinal::omega();
+//!
+//! // All finite ordinals are less than all transfinite ordinals
+//! assert!(five < million);
+//! assert!(million < omega);
+//! assert!(five < omega);
+//! ```
+//!
+//! # Performance Notes
+//!
+//! - Finite ordinals use native `u32` for efficient storage and arithmetic
+//! - Transfinite ordinals store CNF terms in a vector (most have 1-3 terms)
+//! - Arithmetic operations currently clone data; future optimizations planned
+//! - Exponentiation uses repeated multiplication (O(n)); binary exponentiation (O(log n)) is planned
+//!
+//! # Mathematical Background
+//!
+//! For more information on ordinal arithmetic, see:
+//!
+//! - [Ordinal Arithmetic (Wikipedia)](https://en.wikipedia.org/wiki/Ordinal_arithmetic)
+//! - [Cantor Normal Form (Wikipedia)](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form)
+//! - [Epsilon Numbers (Wikipedia)](https://en.wikipedia.org/wiki/Epsilon_number)
 
-#[derive(Debug, Clone)]
-pub enum Ordinal {
-    // TODO: Finite(T) should take any type T st T: Non-Negative Int
-    Finite(u32),
-    Transfinite {
-        exponent: Box<Ordinal>,
-        multiplier: u32,
-        addend: Box<Ordinal>,
-    },
-}
+mod cnfterm;
+mod error;
+mod ordinal;
 
-#[derive(Debug, Error)]
-pub enum OrdinalError {
-    #[error("Transfinite ordinals must have a non-zero exponent and a multiplier greater than 0.")]
-    InvalidTransfiniteOrdinal,
-}
-
-type Result<T> = std::result::Result<T, OrdinalError>;
-
-impl Ordinal {
-    pub fn new_transfinite(
-        exponent: Box<Ordinal>,
-        multiplier: u32,
-        addend: Box<Ordinal>,
-    ) -> Result<Self> {
-        if multiplier == 0 || matches!(*exponent, Ordinal::Finite(0)) {
-            Err(OrdinalError::InvalidTransfiniteOrdinal)
-        } else {
-            Ok(Ordinal::Transfinite {
-                exponent,
-                multiplier,
-                addend,
-            })
-        }
-    }
-
-    pub fn is_finite(&self) -> bool {
-        matches!(self, Ordinal::Finite(_))
-    }
-
-    pub fn is_transfinite(&self) -> bool {
-        matches!(self, Ordinal::Transfinite { .. })
-    }
-
-    pub fn successor(&self) -> Self {
-        match self {
-            Ordinal::Finite(value) => Ordinal::Finite(value + 1),
-            Ordinal::Transfinite {
-                exponent,
-                multiplier,
-                addend,
-            } => Ordinal::Transfinite {
-                exponent: exponent.clone(),
-                multiplier: *multiplier,
-                addend: Box::new(addend.successor()),
-            },
-        }
-    }
-
-    pub fn is_limit(&self) -> bool {
-        match self {
-            Ordinal::Finite(_) => false,
-            Ordinal::Transfinite { addend, .. } => matches!(**addend, Ordinal::Finite(0)),
-        }
-    }
-}
-
-impl std::fmt::Display for Ordinal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Ordinal::Finite(n) => write!(f, "{}", n),
-            Ordinal::Transfinite {
-                exponent,
-                multiplier,
-                addend,
-            } => write!(f, "ω^{} * {} + {}", exponent, multiplier, addend),
-        }
-    }
-}
-
-impl PartialEq for Ordinal {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Ordinal::Finite(a), Ordinal::Finite(b)) => a == b,
-            (
-                Ordinal::Transfinite {
-                    exponent: e1,
-                    multiplier: m1,
-                    addend: a1,
-                },
-                Ordinal::Transfinite {
-                    exponent: e2,
-                    multiplier: m2,
-                    addend: a2,
-                },
-            ) => e1 == e2 && m1 == m2 && a1 == a2,
-            _ => false,
-        }
-    }
-}
-
-impl Eq for Ordinal {}
-
-impl PartialOrd for Ordinal {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match (self, other) {
-            (Ordinal::Finite(a), Ordinal::Finite(b)) => a.partial_cmp(b),
-            (Ordinal::Finite(_), Ordinal::Transfinite { .. }) => Some(std::cmp::Ordering::Less),
-            (Ordinal::Transfinite { .. }, Ordinal::Finite(_)) => Some(std::cmp::Ordering::Greater),
-            (
-                Ordinal::Transfinite {
-                    exponent: e1,
-                    multiplier: m1,
-                    addend: a1,
-                },
-                Ordinal::Transfinite {
-                    exponent: e2,
-                    multiplier: m2,
-                    addend: a2,
-                },
-            ) => e1
-                .partial_cmp(e2)
-                .or_else(|| m1.partial_cmp(m2))
-                .or_else(|| a1.partial_cmp(a2)),
-        }
-    }
-}
-
-impl Ord for Ordinal {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new_transfinite_valid() {
-        let transfinite = Ordinal::new_transfinite(
-            Box::new(Ordinal::Finite(1)),
-            2,
-            Box::new(Ordinal::Finite(0)),
-        );
-        assert!(transfinite.is_ok());
-    }
-
-    #[test]
-    fn test_new_transfinite_invalid_exponent() {
-        let transfinite = Ordinal::new_transfinite(
-            Box::new(Ordinal::Finite(0)),
-            2,
-            Box::new(Ordinal::Finite(0)),
-        );
-        assert!(transfinite.is_err());
-    }
-
-    #[test]
-    fn test_new_transfinite_invalid_multiplier() {
-        let transfinite = Ordinal::new_transfinite(
-            Box::new(Ordinal::Finite(1)),
-            0,
-            Box::new(Ordinal::Finite(0)),
-        );
-        assert!(transfinite.is_err());
-    }
-
-    #[test]
-    fn test_is_finite() {
-        assert!(Ordinal::Finite(42).is_finite());
-        assert!(!Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
-        }
-        .is_finite());
-    }
-
-    #[test]
-    fn test_is_transfinite() {
-        assert!(Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
-        }
-        .is_transfinite());
-        assert!(!Ordinal::Finite(42).is_transfinite());
-    }
-
-    #[test]
-    fn test_is_limit() {
-        assert!(!Ordinal::Finite(42).is_limit());
-
-        let limit = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-
-        assert!(limit.is_limit());
-
-        let non_limit = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(1)),
-        };
-
-        assert!(!non_limit.is_limit());
-    }
-
-    #[test]
-    fn test_successor() {
-        assert_eq!(Ordinal::Finite(1).successor(), Ordinal::Finite(2));
-
-        let transfinite = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-
-        let expected_successor = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(0)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(1)),
-        };
-
-        assert_eq!(transfinite.successor(), expected_successor);
-    }
-
-    #[test]
-    fn test_partial_eq() {
-        assert_eq!(Ordinal::Finite(1), Ordinal::Finite(1));
-        assert_ne!(Ordinal::Finite(1), Ordinal::Finite(2));
-
-        let ord1 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-        let ord2 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 2,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-
-        assert_eq!(ord1, ord2);
-    }
-
-    #[test]
-    fn test_partial_ord() {
-        assert!(Ordinal::Finite(1) < Ordinal::Finite(2));
-        assert!(
-            Ordinal::Finite(2)
-                < Ordinal::Transfinite {
-                    exponent: Box::new(Ordinal::Finite(0)),
-                    multiplier: 1,
-                    addend: Box::new(Ordinal::Finite(0)),
-                }
-        );
-
-        let ord1 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-        let ord2 = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(2)),
-            multiplier: 1,
-            addend: Box::new(Ordinal::Finite(0)),
-        };
-
-        assert!(ord1 < ord2);
-    }
-
-    #[test]
-    fn test_display() {
-        assert_eq!(Ordinal::Finite(42).to_string(), "42");
-
-        let transfinite = Ordinal::Transfinite {
-            exponent: Box::new(Ordinal::Finite(1)),
-            multiplier: 3,
-            addend: Box::new(Ordinal::Finite(2)),
-        };
-
-        assert_eq!(transfinite.to_string(), "ω^1 * 3 + 2");
-    }
-}
+pub use crate::cnfterm::CnfTerm;
+pub use crate::error::{OrdinalError, Result};
+pub use crate::ordinal::Ordinal;
