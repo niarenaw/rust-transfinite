@@ -1,6 +1,6 @@
 # Transfinite Ordinal Arithmetic
 
-A Rust library for performing arithmetic operations on transfinite ordinal numbers up to ε₀ (epsilon-zero), using Cantor Normal Form representation.
+A Rust library for performing arithmetic operations on [transfinite ordinal numbers](https://plato.stanford.edu/entries/set-theory/) up to ε₀ (epsilon-zero), using Cantor Normal Form representation.
 
 [![Crates.io](https://img.shields.io/crates/v/ordinal.svg)](https://crates.io/crates/ordinal)
 [![Documentation](https://docs.rs/ordinal/badge.svg)](https://docs.rs/ordinal)
@@ -16,22 +16,19 @@ Ordinal numbers extend the natural numbers to describe the **order type** of wel
 
 Unlike cardinal numbers (which measure "how many"), ordinals measure "what position" and preserve order information. Ordinal arithmetic has unique properties:
 
-⚠️ **Addition and multiplication are NOT commutative:**
+**Addition and multiplication are NOT commutative:**
 - `1 + ω = ω` (add one natural number to infinity, still get infinity)
 - `ω + 1 > ω` (but infinity plus one is a distinct ordinal!)
 - `2 · ω = ω` (two copies of infinity, each infinite, is still infinity)
 - `ω · 2 = ω + ω` (infinity doubled is larger than infinity)
 
-This library implements ordinals up to **ε₀** (epsilon-zero), the first ordinal that satisfies ω^ε₀ = ε₀, which is the limit of the finite tower: ω, ω^ω, ω^(ω^ω), ...
+This library implements ordinals up to **ε₀** (epsilon-zero), the first ordinal that satisfies ω^ε₀ = ε₀, which is the limit of the finite sequence: ω, ω^ω, ω^(ω^ω), ...
 
 ## Features
 
-- ✓ **Ordinal arithmetic**: addition, multiplication, exponentiation
-- ✓ **Cantor Normal Form** representation for efficient computation
-- ✓ **Type-safe construction** with validation
-- ✓ **Comparison and ordering** of ordinals
-- ✓ **Zero dependencies** (except for traits and error handling)
-- ✓ **Comprehensive test suite** with mathematical examples
+- **Ordinal arithmetic**: addition, multiplication, exponentiation
+- **Comparison and ordering** of ordinals
+- **Cantor Normal Form** representation for efficient computation
 
 ## Quick Start
 
@@ -131,11 +128,11 @@ This distinction matters for multiplication and exponentiation algorithms.
 
 | Operation | Property | Example |
 |-----------|----------|---------|
-| **Addition** | Not commutative | `1 + ω = ω` but `ω + 1 ≠ ω` |
+| **Addition** | Not commutative | `1 + ω = ω`, but `ω + 1 ≠ ω` |
 | **Addition** | Associative | `(α + β) + γ = α + (β + γ)` |
-| **Multiplication** | Not commutative | `2 · ω = ω` but `ω · 2 = ω + ω` |
+| **Multiplication** | Not commutative | `2 · ω = ω`, but `ω · 2 = ω + ω` |
 | **Multiplication** | Associative | `(α · β) · γ = α · (β · γ)` |
-| **Exponentiation** | Not commutative | `2^ω = ω` but `ω^2 = ω · ω` |
+| **Exponentiation** | Not commutative | `2^ω = ω`, but `ω^2 = ω · ω` |
 
 ## Examples
 
@@ -223,53 +220,17 @@ assert!(omega.clone() >= omega.clone());
 **Comparison:**
 - `PartialOrd`, `Ord` - Standard Rust ordering
 
-See the [API documentation](https://docs.rs/ordinal) for complete details.
-
-## Performance Considerations
-
-- **Representation**: Finite ordinals use native `u32` for efficiency. Transfinite ordinals use a vector of CNF terms.
-- **Cloning**: Current implementation clones data in arithmetic operations. Future optimizations planned.
-- **Exponentiation**: Currently uses repeated multiplication for finite exponents (O(n)). Binary exponentiation (O(log n)) is planned.
-- **Memory**: CNF terms are stored as vectors. Most ordinals have 1-3 terms, but deeply nested ordinals can be larger.
-
-## Mathematical Background
-
-This library implements the theory of ordinal arithmetic developed by Georg Cantor in the late 19th century. For more information:
-
-- [Wikipedia: Ordinal Arithmetic](https://en.wikipedia.org/wiki/Ordinal_arithmetic)
-- [Wikipedia: Cantor Normal Form](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form)
-- [Stanford Encyclopedia: Ordinal Numbers](https://plato.stanford.edu/entries/set-theory/)
-- [Googology Wiki: Epsilon Numbers](https://googology.fandom.com/wiki/Epsilon_number)
-
-### Proof of Correctness
-
-The algorithms in this library are based on standard constructions in ordinal arithmetic:
-
-- **Addition**: Right-hand dominance for transfinite ordinals
-- **Multiplication**: Exponent shifting and coefficient multiplication
-- **Exponentiation**: Distinct handling of limit vs successor ordinals
-
-The implementation follows the definitions in:
-- Cantor, Georg. "Contributions to the Founding of the Theory of Transfinite Numbers" (1897)
+See the [API documentation](https://docs.rs/transfinite) for complete details.
 
 ## Limitations
 
 - **Ordinals up to ε₀ only**: Cannot represent ε₁, ε₂, or larger ordinals
 - **Finite coefficients**: CNF multiplicities are limited to `u32` (0 to 4,294,967,295)
-- **No ordinal subtraction**: Ordinal subtraction is not well-defined for all ordinals
-- **No division**: Ordinal division is complex and not yet implemented
+- **No ordinal subtraction or division**: Ordinal subtraction and devision are not well-defined for all ordinals
 
 ## Contributing
 
-Contributions are welcome! Please feel free to:
-
-- Report bugs or issues
-- Suggest features or improvements
-- Submit pull requests
-- Improve documentation
-- Add more test cases
-
-See the [issue tracker](https://github.com/username/transfinite/issues) for planned improvements.
+Contributions are welcome! See the [issue tracker](https://github.com/username/rust-transfinite/issues) for planned improvements or bug reproting.
 
 ## License
 
@@ -279,11 +240,3 @@ This project is licensed under either of:
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
 
 at your option.
-
-## Acknowledgments
-
-This library was inspired by the need for ordinal arithmetic in proof theory, type theory, and theoretical computer science. Special thanks to the Rust community for excellent documentation standards and tooling.
-
----
-
-**Note**: This library is under active development. The API may change in minor versions before 1.0.0.
