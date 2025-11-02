@@ -230,7 +230,7 @@ See the [API documentation](https://docs.rs/transfinite) for complete details.
 
 ## Contributing
 
-Contributions are welcome! See the [issue tracker](https://github.com/username/rust-transfinite/issues) for planned improvements or bug reproting.
+Contributions are welcome! See the [issue tracker](https://github.com/niarenaw/rust-transfinite/issues) for planned improvements or bug reproting.
 
 ## License
 
