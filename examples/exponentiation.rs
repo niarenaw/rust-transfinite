@@ -19,7 +19,7 @@
 //! ```
 
 use num_traits::Pow;
-use ordinal::{CnfTerm, Ordinal};
+use transfinite::{CnfTerm, Ordinal};
 
 fn main() {
     // Construct the base ordinal: ω³ + ω

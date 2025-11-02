@@ -2,7 +2,7 @@
 // Tests edge cases, properties, and mathematical invariants
 
 use num_traits::Pow;
-use ordinal::*;
+use transfinite::*;
 
 #[cfg(test)]
 mod ordinal_properties {

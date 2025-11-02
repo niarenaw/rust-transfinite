@@ -8,7 +8,7 @@ use thiserror::Error;
 /// # Examples
 ///
 /// ```
-/// use ordinal::{CnfTerm, Ordinal, OrdinalError};
+/// use transfinite::{CnfTerm, Ordinal, OrdinalError};
 ///
 /// // CnfTermConstructionError: multiplicity must be positive
 /// let result = CnfTerm::new(&Ordinal::one(), 0);
@@ -39,7 +39,7 @@ pub enum OrdinalError {
     /// # Example
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal, OrdinalError};
+    /// use transfinite::{CnfTerm, Ordinal, OrdinalError};
     ///
     /// // This will fail because multiplicity is 0
     /// let result = CnfTerm::new(&Ordinal::one(), 0);
@@ -72,7 +72,7 @@ pub enum OrdinalError {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm, OrdinalError};
+    /// use transfinite::{Ordinal, CnfTerm, OrdinalError};
     ///
     /// // Error: empty terms
     /// let result = Ordinal::new_transfinite(&vec![]);
@@ -99,7 +99,7 @@ pub enum OrdinalError {
 /// # Examples
 ///
 /// ```
-/// use ordinal::{Result, Ordinal, CnfTerm};
+/// use transfinite::{Result, Ordinal, CnfTerm};
 ///
 /// fn create_omega_squared() -> Result<Ordinal> {
 ///     let term = CnfTerm::new(&Ordinal::new_finite(2), 1)?;

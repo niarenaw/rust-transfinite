@@ -42,7 +42,7 @@ ordinal = "0.1.0"
 ### Basic Example
 
 ```rust
-use ordinal::Ordinal;
+use transfinite::Ordinal;
 use num_traits::Pow;
 
 // Create finite ordinals
@@ -65,7 +65,7 @@ println!("ω² = {}", omega_squared);          // Prints: ω^2
 ### Non-Commutativity Example
 
 ```rust
-use ordinal::Ordinal;
+use transfinite::Ordinal;
 
 let one = Ordinal::one();
 let omega = Ordinal::omega();
@@ -111,7 +111,7 @@ This library represents transfinite ordinals internally using CNF, enabling effi
   - Informally: "one step after" another ordinal
 
 ```rust
-use ordinal::Ordinal;
+use transfinite::Ordinal;
 
 let omega = Ordinal::omega();
 assert!(omega.is_limit());          // ω is a limit
@@ -139,7 +139,7 @@ This distinction matters for multiplication and exponentiation algorithms.
 ### Building Complex Ordinals
 
 ```rust
-use ordinal::{Ordinal, CnfTerm};
+use transfinite::{Ordinal, CnfTerm};
 
 // ω² (omega squared)
 let omega_squared = Ordinal::new_transfinite(&vec![
@@ -159,7 +159,7 @@ println!("{}", complex);  // Prints: ω^2 + ω * 3 + 7
 ### Exponentiation
 
 ```rust
-use ordinal::Ordinal;
+use transfinite::Ordinal;
 use num_traits::Pow;
 
 let omega = Ordinal::omega();
@@ -176,7 +176,7 @@ println!("ω^(ω^ω) = {}", tower);
 ### Comparison and Ordering
 
 ```rust
-use ordinal::Ordinal;
+use transfinite::Ordinal;
 
 let five = Ordinal::new_finite(5);
 let omega = Ordinal::omega();

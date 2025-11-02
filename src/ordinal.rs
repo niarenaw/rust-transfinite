@@ -38,7 +38,7 @@ use crate::error::{OrdinalError, Result};
 /// ## Creating Ordinals
 ///
 /// ```
-/// use ordinal::Ordinal;
+/// use transfinite::Ordinal;
 ///
 /// // Finite ordinals
 /// let zero = Ordinal::zero();
@@ -52,7 +52,7 @@ use crate::error::{OrdinalError, Result};
 /// ## Arithmetic Operations
 ///
 /// ```
-/// use ordinal::Ordinal;
+/// use transfinite::Ordinal;
 /// use num_traits::Pow;
 ///
 /// let omega = Ordinal::omega();
@@ -73,7 +73,7 @@ use crate::error::{OrdinalError, Result};
 /// ## Classification
 ///
 /// ```
-/// use ordinal::Ordinal;
+/// use transfinite::Ordinal;
 ///
 /// let zero = Ordinal::zero();
 /// let one = Ordinal::one();
@@ -130,7 +130,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let zero = Ordinal::new_finite(0);
     /// let five = Ordinal::new_finite(5);
@@ -167,7 +167,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm};
+    /// use transfinite::{Ordinal, CnfTerm};
     ///
     /// // Create ω² (omega squared)
     /// let omega_squared = Ordinal::new_transfinite(&vec![
@@ -188,7 +188,7 @@ impl Ordinal {
     /// # Errors
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm, OrdinalError};
+    /// use transfinite::{Ordinal, CnfTerm, OrdinalError};
     ///
     /// // Empty terms vector
     /// assert!(Ordinal::new_transfinite(&vec![]).is_err());
@@ -243,7 +243,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let zero = Ordinal::zero();
     /// let one = Ordinal::one();
@@ -277,7 +277,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let one = Ordinal::one();
     /// let five = Ordinal::new_finite(5);
@@ -305,7 +305,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let zero = Ordinal::zero();
     /// let one = Ordinal::one();
@@ -358,7 +358,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let five = Ordinal::new_finite(5);
     /// let omega = Ordinal::omega();
@@ -375,7 +375,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let five = Ordinal::new_finite(5);
     /// let omega = Ordinal::omega();
@@ -400,7 +400,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm};
+    /// use transfinite::{Ordinal, CnfTerm};
     ///
     /// let omega = Ordinal::omega();
     /// let leading = omega.leading_cnf_term().unwrap();
@@ -431,7 +431,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm};
+    /// use transfinite::{Ordinal, CnfTerm};
     ///
     /// // ω² + ω·3 + 7
     /// let ordinal = Ordinal::new_transfinite(&vec![
@@ -464,7 +464,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{Ordinal, CnfTerm};
+    /// use transfinite::{Ordinal, CnfTerm};
     ///
     /// let omega = Ordinal::omega();
     /// let terms = omega.cnf_terms().unwrap();
@@ -494,7 +494,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let zero = Ordinal::zero();
     /// assert_eq!(zero, Ordinal::new_finite(0));
@@ -512,7 +512,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let one = Ordinal::one();
     /// assert_eq!(one, Ordinal::new_finite(1));
@@ -531,7 +531,7 @@ impl Ordinal {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::Ordinal;
+    /// use transfinite::Ordinal;
     ///
     /// let omega = Ordinal::omega();
     /// assert!(omega.is_transfinite());

@@ -5,7 +5,7 @@
 mod tests {
 
     use num_traits::Pow;
-    use ordinal::*;
+    use transfinite::*;
 
     #[test]
     fn multiplication() {

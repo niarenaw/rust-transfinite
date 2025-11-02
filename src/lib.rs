@@ -20,7 +20,7 @@
 //! # Quick Start
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //! use num_traits::Pow;
 //!
 //! // Create finite and transfinite ordinals
@@ -46,7 +46,7 @@
 //! Addition and multiplication are **not commutative**:
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //!
 //! let one = Ordinal::one();
 //! let omega = Ordinal::omega();
@@ -66,7 +66,7 @@
 //! Addition and multiplication **are associative**:
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //!
 //! let a = Ordinal::omega();
 //! let b = Ordinal::new_finite(5);
@@ -92,7 +92,7 @@
 //! This library uses CNF internally for efficient arithmetic:
 //!
 //! ```
-//! use ordinal::{Ordinal, CnfTerm};
+//! use transfinite::{Ordinal, CnfTerm};
 //!
 //! // Construct ω² + ω·3 + 7 using CNF terms
 //! let ordinal = Ordinal::new_transfinite(&vec![
@@ -112,7 +112,7 @@
 //! - **Successor ordinals**: Form α+1 for some ordinal α (e.g., 1, 5, ω+1)
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //!
 //! let zero = Ordinal::zero();
 //! let omega = Ordinal::omega();
@@ -139,7 +139,7 @@
 //! ## Basic Arithmetic
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //!
 //! let two = Ordinal::new_finite(2);
 //! let three = Ordinal::new_finite(3);
@@ -156,7 +156,7 @@
 //! ## Exponentiation
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //! use num_traits::Pow;
 //!
 //! let omega = Ordinal::omega();
@@ -172,7 +172,7 @@
 //! ## Comparison
 //!
 //! ```
-//! use ordinal::Ordinal;
+//! use transfinite::Ordinal;
 //!
 //! let five = Ordinal::new_finite(5);
 //! let million = Ordinal::new_finite(1_000_000);

@@ -39,7 +39,7 @@ use std::cmp::{Ord, PartialOrd};
 /// ## Creating CNF Terms
 ///
 /// ```
-/// use ordinal::{CnfTerm, Ordinal};
+/// use transfinite::{CnfTerm, Ordinal};
 ///
 /// // ω^1 · 1 = ω
 /// let omega_term = CnfTerm::new(&Ordinal::one(), 1).unwrap();
@@ -54,7 +54,7 @@ use std::cmp::{Ord, PartialOrd};
 /// ## Combining Terms to Build Ordinals
 ///
 /// ```
-/// use ordinal::{CnfTerm, Ordinal};
+/// use transfinite::{CnfTerm, Ordinal};
 ///
 /// // Build ω² + ω·3 + 7
 /// let ordinal = Ordinal::new_transfinite(&vec![
@@ -69,7 +69,7 @@ use std::cmp::{Ord, PartialOrd};
 /// ## Error Handling
 ///
 /// ```
-/// use ordinal::{CnfTerm, Ordinal, OrdinalError};
+/// use transfinite::{CnfTerm, Ordinal, OrdinalError};
 ///
 /// // Multiplicity must be positive
 /// let result = CnfTerm::new(&Ordinal::one(), 0);
@@ -111,7 +111,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// // Create ω (omega)
     /// let omega = CnfTerm::new(&Ordinal::one(), 1).unwrap();
@@ -149,7 +149,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::CnfTerm;
+    /// use transfinite::CnfTerm;
     ///
     /// let seven = CnfTerm::new_finite(7);
     /// assert!(seven.is_finite());
@@ -170,7 +170,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// let term = CnfTerm::new(&Ordinal::new_finite(2), 3).unwrap();
     /// assert_eq!(term.exponent(), Ordinal::new_finite(2));
@@ -191,7 +191,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// let term = CnfTerm::new(&Ordinal::one(), 5).unwrap();
     /// assert_eq!(term.multiplicity(), 5);
@@ -207,7 +207,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// // ω^1 · 1 = ω (limit)
     /// let omega_term = CnfTerm::new(&Ordinal::one(), 1).unwrap();
@@ -236,7 +236,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// // ω^0 · 5 = 5 (successor)
     /// let finite_term = CnfTerm::new_finite(5);
@@ -258,7 +258,7 @@ impl CnfTerm {
     /// # Examples
     ///
     /// ```
-    /// use ordinal::{CnfTerm, Ordinal};
+    /// use transfinite::{CnfTerm, Ordinal};
     ///
     /// let finite = CnfTerm::new_finite(42);
     /// assert!(finite.is_finite());

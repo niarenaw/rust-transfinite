@@ -4,7 +4,7 @@
 //! for the ordinal arithmetic library.
 
 use num_traits::Pow;
-use ordinal::{CnfTerm, Ordinal, OrdinalError};
+use transfinite::{CnfTerm, Ordinal, OrdinalError};
 
 // ========================================
 // CNF TERM CONSTRUCTION ERRORS
