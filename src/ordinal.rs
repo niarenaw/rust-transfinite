@@ -771,7 +771,7 @@ impl Mul<Ordinal> for Ordinal {
                     new_terms.push(
                         CnfTerm::new(
                             &leading_term_lhs_exponent,
-                            leading_term_lhs_mult * trailing_term_rhs_mult,
+                            leading_term_lhs_mult.saturating_mul(trailing_term_rhs_mult),
                         )
                         .unwrap(),
                     );
