@@ -746,7 +746,7 @@ impl Mul<Ordinal> for Ordinal {
             }
 
             // Case 5: Transfinite × Transfinite - complex CNF multiplication
-            (ref lhs @ Ordinal::Transfinite(_), ref rhs @ Ordinal::Transfinite(ref terms_rhs)) => {
+            (ref lhs @ Ordinal::Transfinite(ref terms_lhs), ref rhs @ Ordinal::Transfinite(ref terms_rhs)) => {
                 let mut new_terms: Vec<CnfTerm> = Vec::new();
                 let leading_term_lhs_exponent = lhs.leading_cnf_term().unwrap().exponent();
 
@@ -775,6 +775,9 @@ impl Mul<Ordinal> for Ordinal {
                         )
                         .unwrap(),
                     );
+
+                    // Append non-leading terms from lhs (e.g., the "+3" in (w+3) * (w+5) = w^2 + w*5 + 3)
+                    new_terms.extend(terms_lhs.iter().skip(1).cloned());
                 }
 
                 Ordinal::new_transfinite(&new_terms).unwrap()
