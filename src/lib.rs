@@ -78,6 +78,14 @@
 //! assert_eq!((&a * &b) * &c, &a * (&b * &c));
 //! ```
 //!
+//! ## Properties Summary
+//!
+//! | Operation | Associative | Commutative | Identity | Absorbing |
+//! |-----------|-------------|-------------|----------|-----------|
+//! | Addition  | Yes         | **No**      | 0        | -         |
+//! | Multiply  | Yes         | **No**      | 1        | 0         |
+//! | Power     | **No**      | **No**      | -        | -         |
+//!
 //! # Cantor Normal Form Representation
 //!
 //! Every ordinal α < ε₀ can be uniquely expressed in Cantor Normal Form:
