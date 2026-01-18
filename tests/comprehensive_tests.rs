@@ -86,8 +86,7 @@ mod ordinal_properties {
     #[test]
     fn test_equality() {
         let omega1 = Ordinal::omega();
-        let omega2 =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 1).unwrap()]).unwrap();
+        let omega2 = Ordinal::builder().omega().build().unwrap();
 
         assert_eq!(omega1, omega2);
 
@@ -191,12 +190,10 @@ mod ordinal_properties {
     #[test]
     fn test_addition_omega_cases() {
         let omega = Ordinal::omega();
-        let omega_squared =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
+        let omega_squared = Ordinal::builder().omega_power(2).build().unwrap();
 
         // ω + ω = ω·2
-        let two_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        let two_omega = Ordinal::builder().omega_times(2).build().unwrap();
         assert_eq!(omega.clone() + omega.clone(), two_omega);
 
         // ω + ω² = ω²
@@ -279,15 +276,14 @@ mod ordinal_properties {
     #[test]
     fn test_multiplication_non_commutative() {
         // Ordinal multiplication is NOT commutative
-        let two = Ordinal::new_finite(2);
+        let two: Ordinal = 2.into();
         let omega = Ordinal::omega();
 
         // 2 · ω = ω (finite multiple absorbed)
         assert_eq!(two.clone() * omega.clone(), omega);
 
         // ω · 2 = ω + ω = ω·2
-        let two_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        let two_omega = Ordinal::builder().omega_times(2).build().unwrap();
         assert_eq!(omega.clone() * two.clone(), two_omega);
 
         // They're different!
@@ -312,13 +308,11 @@ mod ordinal_properties {
         let omega = Ordinal::omega();
 
         // ω · ω = ω²
-        let omega_squared =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
+        let omega_squared = Ordinal::builder().omega_power(2).build().unwrap();
         assert_eq!(omega.clone() * omega.clone(), omega_squared);
 
         // ω · 3 = ω + ω + ω
-        let three_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 3).unwrap()]).unwrap();
+        let three_omega = Ordinal::builder().omega_times(3).build().unwrap();
         assert_eq!(omega.clone() * Ordinal::new_finite(3), three_omega);
     }
 
@@ -419,13 +413,11 @@ mod ordinal_properties {
         let omega = Ordinal::omega();
 
         // ω^2 = ω · ω
-        let omega_squared =
-            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(2)), omega_squared);
+        let omega_squared = Ordinal::builder().omega_power(2).build().unwrap();
+        assert_eq!(omega.clone().pow(Ordinal::from(2)), omega_squared);
 
         // ω^ω
-        let omega_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        let omega_omega = Ordinal::builder().omega_exp(omega.clone()).build().unwrap();
         assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
 
         // 2^ω = ω (any finite^ω = ω for finite ≥ 2)

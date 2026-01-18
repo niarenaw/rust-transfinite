@@ -22,7 +22,7 @@ use thiserror::Error;
 pub enum OrdinalError {
     /// Error when constructing a CNF term with invalid parameters.
     ///
-    /// This error occurs when attempting to create a [`CnfTerm`]
+    /// This error occurs when attempting to create a [`CnfTerm`](crate::CnfTerm)
     /// with a multiplicity of 0. In Cantor Normal Form, all coefficients must be
     /// positive (non-zero).
     ///
@@ -53,14 +53,14 @@ pub enum OrdinalError {
 
     /// Error when constructing a transfinite ordinal with invalid terms.
     ///
-    /// This error occurs when attempting to create a transfinite [`Ordinal`]
+    /// This error occurs when attempting to create a transfinite [`Ordinal`](crate::Ordinal)
     /// with terms that violate CNF requirements.
     ///
     /// # Common Causes
     ///
     /// 1. **Empty terms vector**: Transfinite ordinals must have at least one term
     /// 2. **Leading term is finite**: The first term must have a non-zero exponent
-    ///    (use [`Ordinal::new_finite`] for finite ordinals)
+    ///    (use [`Ordinal::new_finite`](crate::Ordinal::new_finite) for finite ordinals)
     ///
     /// # How to Avoid
     ///
