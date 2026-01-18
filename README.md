@@ -2,8 +2,8 @@
 
 A Rust library for performing arithmetic operations on [transfinite ordinal numbers](https://plato.stanford.edu/entries/set-theory/) up to ε₀ (epsilon-zero), using Cantor Normal Form representation.
 
-[![Crates.io](https://img.shields.io/crates/v/ordinal.svg)](https://crates.io/crates/ordinal)
-[![Documentation](https://docs.rs/ordinal/badge.svg)](https://docs.rs/ordinal)
+[![Crates.io](https://img.shields.io/crates/v/transfinite.svg)](https://crates.io/crates/transfinite)
+[![Documentation](https://docs.rs/transfinite/badge.svg)](https://docs.rs/transfinite)
 
 ## What Are Ordinal Numbers?
 
