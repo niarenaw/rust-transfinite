@@ -575,6 +575,30 @@ impl Ordinal {
     }
 }
 
+/// Formats the ordinal in a human-readable mathematical notation.
+///
+/// # Format
+///
+/// - Finite ordinals display as their numeric value: `0`, `5`, `42`
+/// - Transfinite ordinals display in CNF notation: `ω`, `ω^2`, `ω^2 + ω*3 + 7`
+/// - Terms are joined with ` + ` and displayed in decreasing exponent order
+///
+/// # Examples
+///
+/// ```
+/// use transfinite::Ordinal;
+///
+/// assert_eq!(format!("{}", Ordinal::zero()), "0");
+/// assert_eq!(format!("{}", Ordinal::omega()), "ω");
+///
+/// let complex = Ordinal::builder()
+///     .omega_power(2)
+///     .omega_times(3)
+///     .plus(7)
+///     .build()
+///     .unwrap();
+/// assert_eq!(format!("{}", complex), "ω^2 + ω * 3 + 7");
+/// ```
 impl std::fmt::Display for Ordinal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
