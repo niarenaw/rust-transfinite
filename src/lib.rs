@@ -186,8 +186,8 @@
 //!
 //! - Finite ordinals use native `u32` for efficient storage and arithmetic
 //! - Transfinite ordinals store CNF terms in a vector (most have 1-3 terms)
-//! - Arithmetic operations currently clone data; future optimizations planned
-//! - Exponentiation uses repeated multiplication (O(n)); binary exponentiation (O(log n)) is planned
+//! - Arithmetic operations clone data when needed; use references to minimize cloning
+//! - Exponentiation with finite exponents uses O(log n) binary exponentiation
 //!
 //! # Mathematical Background
 //!
