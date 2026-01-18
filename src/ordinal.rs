@@ -108,7 +108,7 @@ use crate::error::{OrdinalError, Result};
 ///
 /// - [`CnfTerm`] - Individual terms in Cantor Normal Form
 /// - [`OrdinalError`] - Errors that can occur during construction
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum Ordinal {
     /// A finite natural number (0, 1, 2, 3, ...).
     ///

@@ -89,7 +89,7 @@ use std::cmp::{Ord, PartialOrd};
 ///
 /// - [`Ordinal`] - The main ordinal type that contains CNF terms
 /// - [`Ordinal::new_transfinite`] - Constructs ordinals from CNF terms
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct CnfTerm {
     exponent: Ordinal,
     multiplicity: u32,
