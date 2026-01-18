@@ -10,7 +10,7 @@ repository = "https://github.com/niarenaw/rust-transfinite"
 documentation = "https://docs.rs/transfinite"
 homepage = "https://github.com/niarenaw/rust-transfinite"
 keywords = ["ordinal", "transfinite", "mathematics", "cantor", "ordinal-arithmetic"]
-categories = ["mathematics", "algorithms", "no-std"]
+categories = ["mathematics", "algorithms"]
 rust-version = "1.70"
 
 [dependencies]
