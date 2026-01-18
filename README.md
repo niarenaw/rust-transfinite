@@ -2,8 +2,8 @@
 
 A Rust library for performing arithmetic operations on [transfinite ordinal numbers](https://plato.stanford.edu/entries/set-theory/) up to ε₀ (epsilon-zero), using Cantor Normal Form representation.
 
-[![Crates.io](https://img.shields.io/crates/v/ordinal.svg)](https://crates.io/crates/ordinal)
-[![Documentation](https://docs.rs/ordinal/badge.svg)](https://docs.rs/ordinal)
+[![Crates.io](https://img.shields.io/crates/v/transfinite.svg)](https://crates.io/crates/transfinite)
+[![Documentation](https://docs.rs/transfinite/badge.svg)](https://docs.rs/transfinite)
 
 ## What Are Ordinal Numbers?
 
@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-transfinite = "0.1.2"
+transfinite = "0.2.0"
 ```
 
 ### Basic Example
@@ -226,11 +226,11 @@ See the [API documentation](https://docs.rs/transfinite) for complete details.
 
 - **Ordinals up to ε₀ only**: Cannot represent ε₁, ε₂, or larger ordinals
 - **Finite coefficients**: CNF multiplicities are limited to `u32` (0 to 4,294,967,295)
-- **No ordinal subtraction or division**: Ordinal subtraction and devision are not well-defined for all ordinals
+- **No ordinal subtraction or division**: Ordinal subtraction and division are not well-defined for all ordinals
 
 ## Contributing
 
-Contributions are welcome! See the [issue tracker](https://github.com/niarenaw/rust-transfinite/issues) for planned improvements or bug reproting.
+Contributions are welcome! See the [issue tracker](https://github.com/niarenaw/rust-transfinite/issues) for planned improvements or bug reporting.
 
 ## License
 

@@ -89,9 +89,10 @@ use std::cmp::{Ord, PartialOrd};
 ///
 /// - [`Ordinal`] - The main ordinal type that contains CNF terms
 /// - [`Ordinal::new_transfinite`] - Constructs ordinals from CNF terms
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct CnfTerm {
     exponent: Ordinal,
+    // u32 provides ~4 billion coefficients while keeping memory compact.
     multiplicity: u32,
 }
 
@@ -178,10 +179,17 @@ impl CnfTerm {
     ///
     /// # Performance Note
     ///
-    /// This method clones the exponent ordinal. The exponent itself can be arbitrarily
-    /// complex (e.g., ω^ω), so this may be an expensive operation.
+    /// This method clones the exponent ordinal. For inspection without cloning,
+    /// use [`exponent_ref`](Self::exponent_ref) instead.
     pub fn exponent(&self) -> Ordinal {
         self.exponent.clone()
+    }
+
+    /// Returns a reference to the exponent of this CNF term.
+    ///
+    /// This avoids cloning when you only need to inspect or compare the exponent.
+    pub fn exponent_ref(&self) -> &Ordinal {
+        &self.exponent
     }
 
     /// Returns the multiplicity (coefficient) of this CNF term.
@@ -309,13 +317,6 @@ impl Ord for CnfTerm {
     }
 }
 
-impl PartialEq for CnfTerm {
-    fn eq(&self, other: &Self) -> bool {
-        self.multiplicity() == other.multiplicity() && self.exponent() == other.exponent()
-    }
-}
-
-impl Eq for CnfTerm {}
 
 #[cfg(test)]
 mod tests {
@@ -429,5 +430,39 @@ mod tests {
         let cnf_term1 = CnfTerm::new(&one, 1).unwrap();
         let cnf_term2 = CnfTerm::new(&two, 1).unwrap();
         assert!(cnf_term1.partial_cmp(&cnf_term2).unwrap() == std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn test_nested_transfinite_exponent() {
+        // Term with w^w as exponent
+        let omega = Ordinal::omega();
+        let term = CnfTerm::new(&omega, 1).unwrap();
+        assert!(term.is_limit());
+        assert!(!term.is_finite());
+        assert_eq!(term.exponent(), omega);
+    }
+
+    #[test]
+    fn test_deeply_nested_exponent_display() {
+        // Term w^(w^2) should display correctly
+        let omega_squared = Ordinal::builder().omega_power(2).build().unwrap();
+        let term = CnfTerm::new(&omega_squared, 1).unwrap();
+        assert_eq!(format!("{}", term), "ω^ω^2");
+    }
+
+    #[test]
+    fn test_exponent_ref_avoids_clone() {
+        let omega = Ordinal::omega();
+        let term = CnfTerm::new(&omega, 5).unwrap();
+        // exponent_ref returns a reference, no cloning
+        assert_eq!(term.exponent_ref(), &omega);
+        assert_eq!(*term.exponent_ref(), term.exponent());
+    }
+
+    #[test]
+    fn test_large_multiplicity() {
+        let one = Ordinal::one();
+        let term = CnfTerm::new(&one, u32::MAX).unwrap();
+        assert_eq!(term.multiplicity(), u32::MAX);
     }
 }

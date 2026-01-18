@@ -23,14 +23,13 @@
 //! use transfinite::Ordinal;
 //! use num_traits::Pow;
 //!
-//! // Create finite and transfinite ordinals
-//! let five = Ordinal::new_finite(5);
+//! // Create ordinals (From<u32> enables .into() for finite ordinals)
 //! let omega = Ordinal::omega();
 //!
-//! // Perform ordinal arithmetic
-//! let sum = omega.clone() + five.clone();
-//! let product = omega.clone() * Ordinal::new_finite(2);
-//! let power = omega.clone().pow(Ordinal::new_finite(2));
+//! // Perform ordinal arithmetic using references to avoid cloning
+//! let sum = &omega + &Ordinal::from(5);
+//! let product = &omega * &Ordinal::from(2);
+//! let power = omega.pow(Ordinal::from(2));
 //!
 //! println!("ω + 5 = {}", sum);        // Prints: ω + 5
 //! println!("ω · 2 = {}", product);    // Prints: ω * 2
@@ -49,16 +48,16 @@
 //! use transfinite::Ordinal;
 //!
 //! let one = Ordinal::one();
+//! let two: Ordinal = 2.into();
 //! let omega = Ordinal::omega();
 //!
-//! // Addition: 1 + ω = ω, but ω + 1 ≠ ω
-//! assert_eq!(one.clone() + omega.clone(), omega);
-//! assert_ne!(omega.clone() + one.clone(), omega);
+//! // Addition: 1 + w = w, but w + 1 != w
+//! assert_eq!(&one + &omega, omega);
+//! assert_ne!(&omega + &one, omega);
 //!
-//! // Multiplication: 2 · ω = ω, but ω · 2 ≠ ω
-//! let two = Ordinal::new_finite(2);
-//! assert_eq!(two.clone() * omega.clone(), omega);
-//! assert_ne!(omega.clone() * two.clone(), omega);
+//! // Multiplication: 2 * w = w, but w * 2 != w
+//! assert_eq!(&two * &omega, omega);
+//! assert_ne!(&omega * &two, omega);
 //! ```
 //!
 //! ## Associativity
@@ -69,15 +68,23 @@
 //! use transfinite::Ordinal;
 //!
 //! let a = Ordinal::omega();
-//! let b = Ordinal::new_finite(5);
-//! let c = Ordinal::new_finite(3);
+//! let b: Ordinal = 5.into();
+//! let c: Ordinal = 3.into();
 //!
 //! // (a + b) + c = a + (b + c)
-//! assert_eq!((a.clone() + b.clone()) + c.clone(), a.clone() + (b.clone() + c.clone()));
+//! assert_eq!((&a + &b) + &c, &a + (&b + &c));
 //!
-//! // (a · b) · c = a · (b · c)
-//! assert_eq!((a.clone() * b.clone()) * c.clone(), a.clone() * (b.clone() * c.clone()));
+//! // (a * b) * c = a * (b * c)
+//! assert_eq!((&a * &b) * &c, &a * (&b * &c));
 //! ```
+//!
+//! ## Properties Summary
+//!
+//! | Operation | Associative | Commutative | Identity | Absorbing |
+//! |-----------|-------------|-------------|----------|-----------|
+//! | Addition  | Yes         | **No**      | 0        | -         |
+//! | Multiply  | Yes         | **No**      | 1        | 0         |
+//! | Power     | **No**      | **No**      | -        | -         |
 //!
 //! # Cantor Normal Form Representation
 //!
@@ -141,16 +148,16 @@
 //! ```
 //! use transfinite::Ordinal;
 //!
-//! let two = Ordinal::new_finite(2);
-//! let three = Ordinal::new_finite(3);
+//! let two: Ordinal = 2.into();
+//! let three: Ordinal = 3.into();
 //! let omega = Ordinal::omega();
 //!
 //! // Finite arithmetic works as expected
-//! assert_eq!(two.clone() + three.clone(), Ordinal::new_finite(5));
-//! assert_eq!(two.clone() * three.clone(), Ordinal::new_finite(6));
+//! assert_eq!(&two + &three, 5.into());
+//! assert_eq!(&two * &three, 6.into());
 //!
 //! // Transfinite arithmetic follows ordinal rules
-//! assert_eq!(omega.clone() + Ordinal::one(), omega.clone().successor());
+//! assert_eq!(&omega + &Ordinal::one(), omega.successor());
 //! ```
 //!
 //! ## Exponentiation
@@ -160,13 +167,12 @@
 //! use num_traits::Pow;
 //!
 //! let omega = Ordinal::omega();
-//! let two = Ordinal::new_finite(2);
 //!
-//! // ω² = ω · ω
-//! let omega_squared = omega.clone().pow(two.clone());
+//! // w^2 = w * w
+//! let omega_squared = omega.clone().pow(Ordinal::from(2));
 //!
-//! // ω^ω (omega to the omega)
-//! let omega_omega = omega.clone().pow(omega.clone());
+//! // w^w (omega to the omega)
+//! let omega_omega = omega.clone().pow(omega);
 //! ```
 //!
 //! ## Comparison
@@ -188,8 +194,8 @@
 //!
 //! - Finite ordinals use native `u32` for efficient storage and arithmetic
 //! - Transfinite ordinals store CNF terms in a vector (most have 1-3 terms)
-//! - Arithmetic operations currently clone data; future optimizations planned
-//! - Exponentiation uses repeated multiplication (O(n)); binary exponentiation (O(log n)) is planned
+//! - Arithmetic operations clone data when needed; use references to minimize cloning
+//! - Exponentiation with finite exponents uses O(log n) binary exponentiation
 //!
 //! # Mathematical Background
 //!
@@ -199,10 +205,12 @@
 //! - [Cantor Normal Form (Wikipedia)](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form)
 //! - [Epsilon Numbers (Wikipedia)](https://en.wikipedia.org/wiki/Epsilon_number)
 
+mod builder;
 mod cnfterm;
 mod error;
 mod ordinal;
 
+pub use crate::builder::OrdinalBuilder;
 pub use crate::cnfterm::CnfTerm;
 pub use crate::error::{OrdinalError, Result};
 pub use crate::ordinal::Ordinal;
