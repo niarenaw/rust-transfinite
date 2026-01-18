@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-transfinite = "0.1.2"
+transfinite = "0.2.0"
 ```
 
 ### Basic Example
