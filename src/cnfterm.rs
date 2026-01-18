@@ -89,7 +89,7 @@ use std::cmp::{Ord, PartialOrd};
 ///
 /// - [`Ordinal`] - The main ordinal type that contains CNF terms
 /// - [`Ordinal::new_transfinite`] - Constructs ordinals from CNF terms
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct CnfTerm {
     exponent: Ordinal,
     // u32 provides ~4 billion coefficients while keeping memory compact.
@@ -317,13 +317,6 @@ impl Ord for CnfTerm {
     }
 }
 
-impl PartialEq for CnfTerm {
-    fn eq(&self, other: &Self) -> bool {
-        self.multiplicity() == other.multiplicity() && self.exponent() == other.exponent()
-    }
-}
-
-impl Eq for CnfTerm {}
 
 #[cfg(test)]
 mod tests {

@@ -108,7 +108,7 @@ use crate::error::{OrdinalError, Result};
 ///
 /// - [`CnfTerm`] - Individual terms in Cantor Normal Form
 /// - [`OrdinalError`] - Errors that can occur during construction
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Ordinal {
     /// A finite natural number (0, 1, 2, 3, ...).
     ///
@@ -616,18 +616,6 @@ impl std::fmt::Display for Ordinal {
     }
 }
 
-impl PartialEq for Ordinal {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Ordinal::Finite(_), Ordinal::Transfinite(_)) => false,
-            (Ordinal::Transfinite(_), Ordinal::Finite(_)) => false,
-            (Ordinal::Finite(m), Ordinal::Finite(n)) => n == m,
-            (Ordinal::Transfinite(xs), Ordinal::Transfinite(ys)) => xs == ys,
-        }
-    }
-}
-
-impl Eq for Ordinal {}
 
 impl From<u32> for Ordinal {
     fn from(n: u32) -> Self {
@@ -776,6 +764,7 @@ impl Add<&Ordinal> for &Ordinal {
 ///
 /// Finite ordinal multiplication uses saturating arithmetic. Multiplying two finite
 /// ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl Mul<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -810,38 +799,44 @@ impl Mul<Ordinal> for Ordinal {
             }
 
             // Case 5: Transfinite × Transfinite - complex CNF multiplication
-            (ref lhs @ Ordinal::Transfinite(ref terms_lhs), ref rhs @ Ordinal::Transfinite(ref terms_rhs)) => {
+            (Ordinal::Transfinite(terms_lhs), Ordinal::Transfinite(terms_rhs)) => {
                 let mut new_terms: Vec<CnfTerm> = Vec::new();
-                let leading_term_lhs_exponent = lhs.leading_cnf_term().unwrap().exponent();
 
-                if rhs.is_limit() {
-                    new_terms.extend(terms_rhs.iter().map(|term| {
+                // Extract needed values before consuming the vecs
+                let leading_exp_lhs = terms_lhs[0].exponent();
+                let leading_mult_lhs = terms_lhs[0].multiplicity();
+                let rhs_is_limit = terms_rhs.last().unwrap().is_limit();
+                let trailing_mult_rhs = terms_rhs.last().unwrap().multiplicity();
+                let rhs_len = terms_rhs.len();
+
+                if rhs_is_limit {
+                    // Consume terms_rhs by moving instead of cloning
+                    new_terms.extend(terms_rhs.into_iter().map(|term| {
                         CnfTerm::new(
-                            &(&leading_term_lhs_exponent + term.exponent()),
+                            &(&leading_exp_lhs + term.exponent()),
                             term.multiplicity(),
                         )
                         .unwrap()
                     }));
                 } else {
-                    new_terms.extend(terms_rhs.iter().take(terms_rhs.len() - 1).map(|term| {
+                    // Consume all but the last term from rhs
+                    new_terms.extend(terms_rhs.into_iter().take(rhs_len - 1).map(|term| {
                         CnfTerm::new(
-                            &(&leading_term_lhs_exponent + term.exponent()),
+                            &(&leading_exp_lhs + term.exponent()),
                             term.multiplicity(),
                         )
                         .unwrap()
                     }));
-                    let leading_term_lhs_mult = lhs.leading_cnf_term().unwrap().multiplicity();
-                    let trailing_term_rhs_mult = rhs.trailing_cnf_term().unwrap().multiplicity();
                     new_terms.push(
                         CnfTerm::new(
-                            &leading_term_lhs_exponent,
-                            leading_term_lhs_mult.saturating_mul(trailing_term_rhs_mult),
+                            &leading_exp_lhs,
+                            leading_mult_lhs.saturating_mul(trailing_mult_rhs),
                         )
                         .unwrap(),
                     );
 
-                    // Append non-leading terms from lhs (e.g., the "+3" in (w+3) * (w+5) = w^2 + w*5 + 3)
-                    new_terms.extend(terms_lhs.iter().skip(1).cloned());
+                    // Move non-leading terms from lhs instead of cloning
+                    new_terms.extend(terms_lhs.into_iter().skip(1));
                 }
 
                 Ordinal::new_transfinite(&new_terms).unwrap()
@@ -885,77 +880,48 @@ impl Pow<Ordinal> for Ordinal {
     type Output = Self;
 
     fn pow(self, rhs: Self) -> Self::Output {
-        match (&self, &rhs) {
-            (_, Ordinal::Finite(0)) | (Ordinal::Finite(1), _) => Ordinal::one(),
-            (_, Ordinal::Finite(1)) => self,
-            (Ordinal::Finite(0), _) => Ordinal::zero(),
+        // Handle base cases first to enable ownership-based matching below
+        if matches!(rhs, Ordinal::Finite(0)) || matches!(self, Ordinal::Finite(1)) {
+            return Ordinal::one();
+        }
+        if matches!(rhs, Ordinal::Finite(1)) {
+            return self;
+        }
+        if matches!(self, Ordinal::Finite(0)) {
+            return Ordinal::zero();
+        }
+
+        // Now we can match on owned values since base cases are handled
+        match (self, rhs) {
             (Ordinal::Finite(m), Ordinal::Finite(n)) => {
-                // Use saturating_pow to prevent overflow
-                Ordinal::new_finite(m.saturating_pow(*n))
+                Ordinal::new_finite(m.saturating_pow(n))
             }
 
-            (Ordinal::Transfinite(_), _) => {
+            (lhs @ Ordinal::Transfinite(_), rhs) => {
                 if rhs.is_limit() {
-                    let leading_term_lhs = self.leading_cnf_term().unwrap();
-                    let leading_exponent_lhs = leading_term_lhs.exponent();
-                    let new_exponent = leading_exponent_lhs * rhs;
+                    let leading_exp = lhs.leading_cnf_term().unwrap().exponent();
+                    let new_exponent = leading_exp * rhs;
                     Ordinal::new_transfinite(&[CnfTerm::new(&new_exponent, 1).unwrap()])
                         .unwrap()
                 } else if let Ordinal::Finite(n) = rhs {
-                    // Binary exponentiation is VALID for finite exponents because
-                    // ordinal multiplication is associative: (α · β) · γ = α · (β · γ)
-                    // This allows us to compute α^(2n) = (α^2)^n safely.
+                    // Binary exponentiation for finite exponents. Valid because
+                    // ordinal multiplication is associative: (a * b) * c = a * (b * c)
                     //
-                    // Note: We CANNOT use binary exponentiation for transfinite exponents
-                    // because ordinal exponentiation is NOT associative:
-                    // ω^(1^ω) = ω but (ω^1)^ω = ω^ω, and ω ≠ ω^ω
-                    //
-                    // Performance: O(log n) multiplications instead of O(n)
-                    if n == 0 {
-                        return Ordinal::one();
-                    }
-
-                    let mut base = self.clone();
-                    let mut exp = n;
-                    let mut result = Ordinal::one();
-
-                    while exp > 0 {
-                        if exp % 2 == 1 {
-                            result = result * base.clone();
-                        }
-                        if exp > 1 {
-                            base = base.clone() * base.clone();
-                        }
-                        exp /= 2;
-                    }
-                    result
+                    // Note: We CANNOT use binary exp for transfinite exponents because
+                    // ordinal exponentiation is NOT associative: w^(1^w) != (w^1)^w
+                    binary_pow(lhs, n)
                 } else {
-                    // rhs must be Transfinite and a successor at this point
+                    // rhs is Transfinite successor - distribute over CNF terms
+                    let Ordinal::Transfinite(terms_rhs) = rhs else { unreachable!() };
                     let mut distributed = Ordinal::one();
-                    if let Ordinal::Transfinite(terms_rhs) = &rhs {
-                        for term in terms_rhs.iter() {
-                            if term.is_finite() {
-                                // Finite term: use binary exponentiation for the finite part
-                                let finite_exp = term.multiplicity();
-                                let mut base = self.clone();
-                                let mut exp = finite_exp;
-                                let mut result = Ordinal::one();
-                                while exp > 0 {
-                                    if exp % 2 == 1 {
-                                        result = result * base.clone();
-                                    }
-                                    if exp > 1 {
-                                        base = base.clone() * base.clone();
-                                    }
-                                    exp /= 2;
-                                }
-                                distributed = distributed * result;
-                            } else {
-                                distributed = distributed
-                                    * self
-                                        .clone()
-                                        .pow(Ordinal::new_transfinite(&[term.clone()]).unwrap());
-                            }
+                    for term in terms_rhs {
+                        if term.is_finite() {
+                            distributed = distributed * binary_pow(lhs.clone(), term.multiplicity());
+                        } else {
+                            distributed = distributed
+                                * lhs.clone().pow(
+                                    Ordinal::new_transfinite(&[term]).unwrap()
+                                );
                         }
                     }
                     distributed
@@ -964,14 +930,9 @@ impl Pow<Ordinal> for Ordinal {
 
             (Ordinal::Finite(m), Ordinal::Transfinite(terms_rhs)) => {
                 // n^(sum of CNF terms) = product of n^(each term)
-                // For each term w^e * k:
-                //   - If e = 0 (finite term): n^k
-                //   - If e = 1: n^(w*k) = w^k
-                //   - If e > 1: n^(w^e * k) = w^(w^(e-1) * k)
                 let mut distributed = Ordinal::one();
                 for term in terms_rhs {
                     if term.is_finite() {
-                        // Finite term: n^k
                         distributed =
                             distributed * Ordinal::new_finite(m.saturating_pow(term.multiplicity()));
                     } else {
@@ -999,7 +960,6 @@ impl Pow<Ordinal> for Ordinal {
                                 * Ordinal::new_transfinite(&[CnfTerm::new(&inner_exp, 1).unwrap()])
                                 .unwrap();
                         } else {
-                            // Transfinite exponent tower - not yet implemented
                             unimplemented!(
                                 "Finite base with transfinite tower exponent not yet supported"
                             )
@@ -1010,6 +970,32 @@ impl Pow<Ordinal> for Ordinal {
             }
         }
     }
+}
+
+/// Binary exponentiation with O(log n) multiplications.
+fn binary_pow(base: Ordinal, exp: u32) -> Ordinal {
+    if exp == 0 {
+        return Ordinal::one();
+    }
+    if exp == 1 {
+        return base;
+    }
+
+    let mut base = base;
+    let mut exp = exp;
+    let mut result = Ordinal::one();
+
+    while exp > 0 {
+        if exp % 2 == 1 {
+            result = result * base.clone();
+        }
+        exp /= 2;
+        if exp > 0 {
+            let b = base;
+            base = b.clone() * b;
+        }
+    }
+    result
 }
 
 impl Pow<&Ordinal> for Ordinal {
