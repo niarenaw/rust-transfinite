@@ -19,29 +19,29 @@
 //! ```
 
 use num_traits::Pow;
-use transfinite::{CnfTerm, Ordinal};
+use transfinite::Ordinal;
 
 fn main() {
-    // Construct the base ordinal: ω³ + ω
-    let base = Ordinal::new_transfinite(&[
-        CnfTerm::new(&Ordinal::new_finite(3), 1).unwrap(), // ω³
-        CnfTerm::new(&Ordinal::new_finite(1), 1).unwrap(), // ω
-    ])
-    .unwrap();
+    // Construct the base ordinal: ω³ + ω using the builder API
+    let base = Ordinal::builder()
+        .omega_power(3) // ω³
+        .omega() // + ω
+        .build()
+        .unwrap();
 
     println!("Base ordinal: {}", base);
     println!("Computing: ({})^5", base);
     println!();
 
     // Compute (ω³ + ω)⁵
-    let result = base.pow(Ordinal::new_finite(5));
+    let result = base.pow(Ordinal::from(5));
 
     // Expected result: ω¹⁵ + ω¹³
-    let expected = Ordinal::new_transfinite(&[
-        CnfTerm::new(&Ordinal::new_finite(15), 1).unwrap(), // ω¹⁵
-        CnfTerm::new(&Ordinal::new_finite(13), 1).unwrap(), // ω¹³
-    ])
-    .unwrap();
+    let expected = Ordinal::builder()
+        .omega_power(15) // ω¹⁵
+        .omega_power(13) // + ω¹³
+        .build()
+        .unwrap();
 
     println!("Result:   {}", result);
     println!("Expected: {}", expected);

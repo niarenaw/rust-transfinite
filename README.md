@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-transfinite = "0.2.0"
+transfinite = "0.2.1"
 ```
 
 ### Basic Example
@@ -45,17 +45,17 @@ transfinite = "0.2.0"
 use transfinite::Ordinal;
 use num_traits::Pow;
 
-// Create finite ordinals
-let zero = Ordinal::zero();
-let five = Ordinal::new_finite(5);
+// Create finite ordinals using From<u32>
+let five: Ordinal = 5.into();
+let two: Ordinal = 2.into();
 
 // Create the first infinite ordinal
 let omega = Ordinal::omega();
 
-// Ordinal arithmetic
-let omega_plus_five = omega.clone() + five.clone();
-let omega_times_two = omega.clone() * Ordinal::new_finite(2);
-let omega_squared = omega.clone().pow(Ordinal::new_finite(2));
+// Ordinal arithmetic using references (avoids cloning)
+let omega_plus_five = &omega + &five;
+let omega_times_two = &omega * &two;
+let omega_squared = omega.clone().pow(two);
 
 println!("ω + 5 = {}", omega_plus_five);     // Prints: ω + 5
 println!("ω · 2 = {}", omega_times_two);     // Prints: ω * 2
@@ -80,6 +80,33 @@ assert_ne!(omega_plus_one, omega);  // ω + 1 ≠ ω
 println!("1 + ω = {}", one_plus_omega);   // Prints: ω
 println!("ω + 1 = {}", omega_plus_one);   // Prints: ω + 1
 ```
+
+## Using the Builder API
+
+For complex ordinals, the builder pattern is cleaner than manual CNF construction:
+
+```rust
+use transfinite::Ordinal;
+
+// Build ω^ω + ω² + ω·5 + 3
+let ordinal = Ordinal::builder()
+    .omega_exp(Ordinal::omega())  // ω^ω (transfinite exponent)
+    .omega_power(2)               // + ω²
+    .omega_times(5)               // + ω·5
+    .plus(3)                      // + 3
+    .build()
+    .unwrap();
+
+println!("{}", ordinal);  // Prints: ω^ω + ω^2 + ω * 5 + 3
+```
+
+Builder methods:
+- `omega()` - Add ω term
+- `omega_times(n)` - Add ω·n term
+- `omega_power(n)` - Add ω^n term
+- `omega_power_times(exp, mult)` - Add ω^exp · mult term
+- `omega_exp(ord)` - Add ω^ord term (transfinite exponent)
+- `plus(n)` - Add finite constant
 
 ## Key Concepts
 
@@ -138,20 +165,24 @@ This distinction matters for multiplication and exponentiation algorithms.
 
 ### Building Complex Ordinals
 
+The builder API provides a fluent interface for constructing ordinals in Cantor Normal Form:
+
 ```rust
-use transfinite::{Ordinal, CnfTerm};
+use transfinite::Ordinal;
 
 // ω² (omega squared)
-let omega_squared = Ordinal::new_transfinite(&vec![
-    CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()
-]).unwrap();
+let omega_squared = Ordinal::builder()
+    .omega_power(2)
+    .build()
+    .unwrap();
 
 // ω² + ω·3 + 7
-let complex = Ordinal::new_transfinite(&vec![
-    CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),  // ω²
-    CnfTerm::new(&Ordinal::one(), 3).unwrap(),          // ω·3
-    CnfTerm::new_finite(7),                             // 7
-]).unwrap();
+let complex = Ordinal::builder()
+    .omega_power(2)    // ω²
+    .omega_times(3)    // + ω·3
+    .plus(7)           // + 7
+    .build()
+    .unwrap();
 
 println!("{}", complex);  // Prints: ω^2 + ω * 3 + 7
 ```
@@ -205,7 +236,8 @@ assert!(omega.clone() >= omega.clone());
 **Constructors:**
 - `Ordinal::zero()`, `Ordinal::one()`, `Ordinal::omega()`
 - `Ordinal::new_finite(n)` - Create finite ordinal
-- `Ordinal::new_transfinite(terms)` - Create from CNF terms
+- `Ordinal::builder()` - Fluent builder for complex ordinals
+- `Ordinal::new_transfinite(terms)` - Create from CNF terms (low-level)
 
 **Query Methods:**
 - `is_finite()`, `is_transfinite()`

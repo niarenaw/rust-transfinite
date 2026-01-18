@@ -206,6 +206,11 @@ impl Ordinal {
     /// 3. Terms are in strictly decreasing order by exponent (CNF requirement)
     ///
     /// If any validation fails, returns `Err(OrdinalError::TransfiniteConstructionError)`.
+    ///
+    /// # See Also
+    ///
+    /// For a more ergonomic API, see [`Ordinal::builder`] which provides a fluent
+    /// interface for constructing ordinals without manually creating [`CnfTerm`]s.
     pub fn new_transfinite(terms: &[CnfTerm]) -> Result<Self> {
         // Validate terms vector is non-empty
         match terms.first() {
@@ -557,7 +562,7 @@ impl Ordinal {
         Ordinal::new_transfinite(&[omega_term]).unwrap()
     }
 
-    /// Creates a new [`OrdinalBuilder`] for fluent ordinal construction.
+    /// Creates a new [`OrdinalBuilder`](crate::OrdinalBuilder) for fluent ordinal construction.
     ///
     /// # Example
     ///

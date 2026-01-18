@@ -99,14 +99,15 @@
 //! This library uses CNF internally for efficient arithmetic:
 //!
 //! ```
-//! use transfinite::{Ordinal, CnfTerm};
+//! use transfinite::Ordinal;
 //!
-//! // Construct ω² + ω·3 + 7 using CNF terms
-//! let ordinal = Ordinal::new_transfinite(&vec![
-//!     CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),  // ω²
-//!     CnfTerm::new(&Ordinal::one(), 3).unwrap(),          // ω·3
-//!     CnfTerm::new_finite(7),                             // 7
-//! ]).unwrap();
+//! // Construct ω² + ω·3 + 7 using the builder API
+//! let ordinal = Ordinal::builder()
+//!     .omega_power(2)    // ω²
+//!     .omega_times(3)    // ω·3
+//!     .plus(7)           // 7
+//!     .build()
+//!     .unwrap();
 //!
 //! println!("{}", ordinal);  // Prints: ω^2 + ω * 3 + 7
 //! ```
@@ -137,6 +138,7 @@
 //! # Core Types
 //!
 //! - [`Ordinal`] - Main ordinal number type (finite or transfinite)
+//! - [`OrdinalBuilder`] - Fluent builder for constructing complex ordinals
 //! - [`CnfTerm`] - A term in Cantor Normal Form (ω^exponent · multiplicity)
 //! - [`OrdinalError`] - Error type for construction failures
 //! - [`Result<T>`] - Type alias for `Result<T, OrdinalError>`
@@ -194,7 +196,8 @@
 //!
 //! - Finite ordinals use native `u32` for efficient storage and arithmetic
 //! - Transfinite ordinals store CNF terms in a vector (most have 1-3 terms)
-//! - Arithmetic operations clone data when needed; use references to minimize cloning
+//! - Arithmetic operations clone data when needed; use references (`&Ordinal`) to minimize cloning
+//! - For CNF term inspection, use [`CnfTerm::exponent_ref()`] to avoid cloning the exponent
 //! - Exponentiation with finite exponents uses O(log n) binary exponentiation
 //!
 //! # Mathematical Background
