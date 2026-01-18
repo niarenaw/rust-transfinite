@@ -153,7 +153,10 @@ mod tests {
 
     #[test]
     fn test_single_omega() {
-        assert_eq!(OrdinalBuilder::new().omega().build().unwrap(), Ordinal::omega());
+        assert_eq!(
+            OrdinalBuilder::new().omega().build().unwrap(),
+            Ordinal::omega()
+        );
     }
 
     #[test]
@@ -164,7 +167,10 @@ mod tests {
 
     #[test]
     fn test_finite_only() {
-        assert_eq!(OrdinalBuilder::new().plus(42).build().unwrap(), Ordinal::new_finite(42));
+        assert_eq!(
+            OrdinalBuilder::new().plus(42).build().unwrap(),
+            Ordinal::new_finite(42)
+        );
     }
 
     #[test]
@@ -180,14 +186,19 @@ mod tests {
             CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),
             CnfTerm::new(&Ordinal::one(), 3).unwrap(),
             CnfTerm::new_finite(7),
-        ]).unwrap();
+        ])
+        .unwrap();
 
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_rejects_wrong_order() {
-        assert!(OrdinalBuilder::new().omega().omega_power(2).build().is_err());
+        assert!(OrdinalBuilder::new()
+            .omega()
+            .omega_power(2)
+            .build()
+            .is_err());
     }
 
     #[test]
@@ -198,6 +209,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_build_unchecked_panics() {
-        OrdinalBuilder::new().omega().omega_power(2).build_unchecked();
+        OrdinalBuilder::new()
+            .omega()
+            .omega_power(2)
+            .build_unchecked();
     }
 }

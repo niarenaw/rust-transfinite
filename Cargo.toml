@@ -11,7 +11,7 @@ documentation = "https://docs.rs/transfinite"
 homepage = "https://github.com/niarenaw/rust-transfinite"
 keywords = ["ordinal", "transfinite", "mathematics", "cantor", "ordinal-arithmetic"]
 categories = ["mathematics", "algorithms"]
-rust-version = "1.70"
+rust-version = "1.81"
 
 [dependencies]
 num-traits = "0.2.19"
@@ -19,3 +19,4 @@ thiserror = "2.0.11"
 
 [dev-dependencies]
 proptest = "1.4"
+cargo-husky = { version = "1", default-features = false, features = ["precommit-hook", "run-cargo-fmt", "run-cargo-clippy"] }

@@ -15,8 +15,8 @@ mod tests {
         let five = &two + &three;
 
         let omega = Ordinal::omega();
-        let omega_2 = Ordinal::new_transfinite(&vec![CnfTerm::new(&two, 1).unwrap()]).unwrap();
-        let omega_3 = Ordinal::new_transfinite(&vec![CnfTerm::new(&three, 1).unwrap()]).unwrap();
+        let omega_2 = Ordinal::new_transfinite(&[CnfTerm::new(&two, 1).unwrap()]).unwrap();
+        let omega_3 = Ordinal::new_transfinite(&[CnfTerm::new(&three, 1).unwrap()]).unwrap();
 
         let lhs = &omega_2 + &omega + one;
         let rhs = omega_3.clone() + omega;
@@ -33,13 +33,13 @@ mod tests {
 
     #[test]
     fn exponentiation() {
-        let base = Ordinal::new_transfinite(&vec![
+        let base = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(5), 1).unwrap(),
             CnfTerm::new(&Ordinal::new_finite(3), 1).unwrap(),
         ])
         .unwrap();
         let expr = base.pow(Ordinal::new_finite(3));
-        let expected = Ordinal::new_transfinite(&vec![
+        let expected = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(15), 1).unwrap(),
             CnfTerm::new(&Ordinal::new_finite(13), 1).unwrap(),
         ])

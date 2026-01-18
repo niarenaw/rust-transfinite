@@ -317,7 +317,6 @@ impl Ord for CnfTerm {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
