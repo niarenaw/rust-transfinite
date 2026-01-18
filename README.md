@@ -226,7 +226,7 @@ See the [API documentation](https://docs.rs/transfinite) for complete details.
 
 - **Ordinals up to ε₀ only**: Cannot represent ε₁, ε₂, or larger ordinals
 - **Finite coefficients**: CNF multiplicities are limited to `u32` (0 to 4,294,967,295)
-- **No ordinal subtraction or division**: Ordinal subtraction and devision are not well-defined for all ordinals
+- **No ordinal subtraction or division**: Ordinal subtraction and division are not well-defined for all ordinals
 
 ## Contributing
 
