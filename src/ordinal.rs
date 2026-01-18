@@ -753,7 +753,7 @@ impl Mul<Ordinal> for Ordinal {
                 if rhs.is_limit() {
                     new_terms.extend(terms_rhs.iter().map(|term| {
                         CnfTerm::new(
-                            &(term.exponent() + &leading_term_lhs_exponent),
+                            &(&leading_term_lhs_exponent + term.exponent()),
                             term.multiplicity(),
                         )
                         .unwrap()
@@ -761,7 +761,7 @@ impl Mul<Ordinal> for Ordinal {
                 } else {
                     new_terms.extend(terms_rhs.iter().take(terms_rhs.len() - 1).map(|term| {
                         CnfTerm::new(
-                            &(term.exponent() + &leading_term_lhs_exponent),
+                            &(&leading_term_lhs_exponent + term.exponent()),
                             term.multiplicity(),
                         )
                         .unwrap()
@@ -863,10 +863,28 @@ impl Pow<Ordinal> for Ordinal {
                     let mut distributed = Ordinal::one();
                     if let Ordinal::Transfinite(terms_rhs) = &rhs {
                         for term in terms_rhs.iter() {
-                            distributed = distributed
-                                * self
-                                    .clone()
-                                    .pow(Ordinal::new_transfinite(&[term.clone()]).unwrap());
+                            if term.is_finite() {
+                                // Finite term: use binary exponentiation for the finite part
+                                let finite_exp = term.multiplicity();
+                                let mut base = self.clone();
+                                let mut exp = finite_exp;
+                                let mut result = Ordinal::one();
+                                while exp > 0 {
+                                    if exp % 2 == 1 {
+                                        result = result * base.clone();
+                                    }
+                                    if exp > 1 {
+                                        base = base.clone() * base.clone();
+                                    }
+                                    exp /= 2;
+                                }
+                                distributed = distributed * result;
+                            } else {
+                                distributed = distributed
+                                    * self
+                                        .clone()
+                                        .pow(Ordinal::new_transfinite(&[term.clone()]).unwrap());
+                            }
                         }
                     }
                     distributed
@@ -874,19 +892,47 @@ impl Pow<Ordinal> for Ordinal {
             }
 
             (Ordinal::Finite(m), Ordinal::Transfinite(terms_rhs)) => {
+                // n^(sum of CNF terms) = product of n^(each term)
+                // For each term w^e * k:
+                //   - If e = 0 (finite term): n^k
+                //   - If e = 1: n^(w*k) = w^k
+                //   - If e > 1: n^(w^e * k) = w^(w^(e-1) * k)
                 let mut distributed = Ordinal::one();
                 for term in terms_rhs {
                     if term.is_finite() {
-                        // Use saturating_pow to prevent overflow
-                        distributed = distributed * Ordinal::new_finite(m.saturating_pow(term.multiplicity()));
+                        // Finite term: n^k
+                        distributed =
+                            distributed * Ordinal::new_finite(m.saturating_pow(term.multiplicity()));
                     } else {
-                        distributed = distributed
-                            * Ordinal::new_transfinite(&[CnfTerm::new(
-                                &Ordinal::new_finite(term.multiplicity()),
-                                1,
+                        let e = term.exponent();
+                        let k = term.multiplicity();
+
+                        if e == Ordinal::one() {
+                            // n^(w * k) = w^k
+                            distributed = distributed
+                                * Ordinal::new_transfinite(&[CnfTerm::new(
+                                    &Ordinal::new_finite(k),
+                                    1,
+                                )
+                                .unwrap()])
+                                .unwrap();
+                        } else if let Ordinal::Finite(e_val) = &e {
+                            // n^(w^e * k) = w^(w^(e-1) * k) for finite e > 1
+                            let inner_exp = Ordinal::new_transfinite(&[CnfTerm::new(
+                                &Ordinal::new_finite(e_val - 1),
+                                k,
                             )
                             .unwrap()])
                             .unwrap();
+                            distributed = distributed
+                                * Ordinal::new_transfinite(&[CnfTerm::new(&inner_exp, 1).unwrap()])
+                                .unwrap();
+                        } else {
+                            // Transfinite exponent tower - not yet implemented
+                            unimplemented!(
+                                "Finite base with transfinite tower exponent not yet supported"
+                            )
+                        }
                     }
                 }
                 distributed

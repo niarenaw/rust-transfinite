@@ -437,6 +437,51 @@ mod ordinal_properties {
     }
 
     #[test]
+    fn test_exponentiation_transfinite_exponents() {
+        let omega = Ordinal::omega();
+
+        // w^(w+1) = w^w * w = w^(w+1) in CNF
+        let omega_plus_1 = omega.clone() + Ordinal::one();
+        let result = omega.clone().pow(omega_plus_1.clone());
+        let expected =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_plus_1, 1).unwrap()]).unwrap();
+        assert_eq!(result, expected);
+
+        // w^(w*2) in CNF has exponent w*2
+        let omega_times_2 =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+        let result = omega.clone().pow(omega_times_2.clone());
+        let expected =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_times_2, 1).unwrap()]).unwrap();
+        assert_eq!(result, expected);
+
+        // (w+1)^w = w^w (successor base to limit exponent)
+        let omega_plus_1 = omega.clone() + Ordinal::one();
+        let result = omega_plus_1.clone().pow(omega.clone());
+        let omega_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        assert_eq!(result, omega_omega);
+
+        // 2^(w^2) = w^w
+        let omega_squared =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
+                .unwrap();
+        let result = Ordinal::new_finite(2).pow(omega_squared.clone());
+        let omega_omega =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        assert_eq!(result, omega_omega);
+
+        // w^(w^2) - exponent is itself transfinite
+        let omega_squared =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
+                .unwrap();
+        let result = omega.clone().pow(omega_squared.clone());
+        let expected =
+            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_squared, 1).unwrap()]).unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
     fn test_exponentiation_laws() {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
