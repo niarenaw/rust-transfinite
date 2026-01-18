@@ -199,10 +199,12 @@
 //! - [Cantor Normal Form (Wikipedia)](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form)
 //! - [Epsilon Numbers (Wikipedia)](https://en.wikipedia.org/wiki/Epsilon_number)
 
+mod builder;
 mod cnfterm;
 mod error;
 mod ordinal;
 
+pub use crate::builder::OrdinalBuilder;
 pub use crate::cnfterm::CnfTerm;
 pub use crate::error::{OrdinalError, Result};
 pub use crate::ordinal::Ordinal;

@@ -554,6 +554,25 @@ impl Ordinal {
         let omega_term = CnfTerm::new(&Ordinal::one(), 1).unwrap();
         Ordinal::new_transfinite(&[omega_term]).unwrap()
     }
+
+    /// Creates a new [`OrdinalBuilder`] for fluent ordinal construction.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// // Build w^2 + w*3 + 7
+    /// let ordinal = Ordinal::builder()
+    ///     .omega_power(2)
+    ///     .omega_times(3)
+    ///     .plus(7)
+    ///     .build()
+    ///     .unwrap();
+    /// ```
+    pub fn builder() -> crate::OrdinalBuilder {
+        crate::OrdinalBuilder::new()
+    }
 }
 
 impl std::fmt::Display for Ordinal {
