@@ -38,14 +38,14 @@ mod ordinal_properties {
 
     #[test]
     fn test_transfinite_empty_terms_fails() {
-        let result = Ordinal::new_transfinite(&vec![]);
+        let result = Ordinal::new_transfinite(&[]);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_transfinite_finite_leading_term_fails() {
         let finite_term = CnfTerm::new_finite(42);
-        let result = Ordinal::new_transfinite(&vec![finite_term]);
+        let result = Ordinal::new_transfinite(&[finite_term]);
         assert!(result.is_err());
     }
 
@@ -87,7 +87,7 @@ mod ordinal_properties {
     fn test_equality() {
         let omega1 = Ordinal::omega();
         let omega2 =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 1).unwrap()]).unwrap();
 
         assert_eq!(omega1, omega2);
 
@@ -192,12 +192,11 @@ mod ordinal_properties {
     fn test_addition_omega_cases() {
         let omega = Ordinal::omega();
         let omega_squared =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
-                .unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
 
         // ω + ω = ω·2
         let two_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
         assert_eq!(omega.clone() + omega.clone(), two_omega);
 
         // ω + ω² = ω²
@@ -288,7 +287,7 @@ mod ordinal_properties {
 
         // ω · 2 = ω + ω = ω·2
         let two_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
         assert_eq!(omega.clone() * two.clone(), two_omega);
 
         // They're different!
@@ -314,13 +313,12 @@ mod ordinal_properties {
 
         // ω · ω = ω²
         let omega_squared =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
-                .unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
         assert_eq!(omega.clone() * omega.clone(), omega_squared);
 
         // ω · 3 = ω + ω + ω
         let three_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 3).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 3).unwrap()]).unwrap();
         assert_eq!(omega.clone() * Ordinal::new_finite(3), three_omega);
     }
 
@@ -422,13 +420,12 @@ mod ordinal_properties {
 
         // ω^2 = ω · ω
         let omega_squared =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
-                .unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
         assert_eq!(omega.clone().pow(Ordinal::new_finite(2)), omega_squared);
 
         // ω^ω
         let omega_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
         assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
 
         // 2^ω = ω (any finite^ω = ω for finite ≥ 2)
@@ -444,40 +441,38 @@ mod ordinal_properties {
         let omega_plus_1 = omega.clone() + Ordinal::one();
         let result = omega.clone().pow(omega_plus_1.clone());
         let expected =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_plus_1, 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega_plus_1, 1).unwrap()]).unwrap();
         assert_eq!(result, expected);
 
         // w^(w*2) in CNF has exponent w*2
         let omega_times_2 =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
         let result = omega.clone().pow(omega_times_2.clone());
         let expected =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_times_2, 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega_times_2, 1).unwrap()]).unwrap();
         assert_eq!(result, expected);
 
         // (w+1)^w = w^w (successor base to limit exponent)
         let omega_plus_1 = omega.clone() + Ordinal::one();
         let result = omega_plus_1.clone().pow(omega.clone());
         let omega_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
         assert_eq!(result, omega_omega);
 
         // 2^(w^2) = w^w
         let omega_squared =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
-                .unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
         let result = Ordinal::new_finite(2).pow(omega_squared.clone());
         let omega_omega =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
         assert_eq!(result, omega_omega);
 
         // w^(w^2) - exponent is itself transfinite
         let omega_squared =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()])
-                .unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
         let result = omega.clone().pow(omega_squared.clone());
         let expected =
-            Ordinal::new_transfinite(&vec![CnfTerm::new(&omega_squared, 1).unwrap()]).unwrap();
+            Ordinal::new_transfinite(&[CnfTerm::new(&omega_squared, 1).unwrap()]).unwrap();
         assert_eq!(result, expected);
     }
 
@@ -632,10 +627,10 @@ mod ordinal_properties {
     #[test]
     fn test_complex_ordinal_construction() {
         // Build ω² + ω·3 + 7
-        let complex = Ordinal::new_transfinite(&vec![
+        let complex = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(), // ω²
             CnfTerm::new(&Ordinal::one(), 3).unwrap(),         // ω·3
-            CnfTerm::new_finite(7),                            // 7
+            CnfTerm::new_finite(7),
         ])
         .unwrap();
 
@@ -647,14 +642,14 @@ mod ordinal_properties {
     #[test]
     fn test_complex_arithmetic() {
         // (ω² + ω + 1) + (ω² + 5) = ω²·2 + 5 (adds leading terms with same exponent)
-        let ord1 = Ordinal::new_transfinite(&vec![
+        let ord1 = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),
             CnfTerm::new(&Ordinal::one(), 1).unwrap(),
             CnfTerm::new_finite(1),
         ])
         .unwrap();
 
-        let ord2 = Ordinal::new_transfinite(&vec![
+        let ord2 = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),
             CnfTerm::new_finite(5),
         ])
@@ -663,7 +658,7 @@ mod ordinal_properties {
         let sum = ord1 + ord2.clone();
 
         // Result should be ω²·2 + 5
-        let expected = Ordinal::new_transfinite(&vec![
+        let expected = Ordinal::new_transfinite(&[
             CnfTerm::new(&Ordinal::new_finite(2), 2).unwrap(),
             CnfTerm::new_finite(5),
         ])

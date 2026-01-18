@@ -266,7 +266,7 @@ fn test_antisymmetry() {
 
     // If a < b, then !(b < a)
     assert!(five < ten);
-    assert!(!(ten < five));
+    assert!((ten >= five));
 }
 
 // ========================================
