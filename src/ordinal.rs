@@ -617,6 +617,13 @@ impl Ord for Ordinal {
     }
 }
 
+/// Ordinal addition is associative but NOT commutative for transfinite ordinals.
+/// For example, `1 + w = w` but `w + 1 = w + 1`.
+///
+/// # Overflow Behavior
+///
+/// Finite ordinal addition uses saturating arithmetic. Adding two finite ordinals
+/// that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
 impl Add<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -718,6 +725,14 @@ impl Add<&Ordinal> for &Ordinal {
     }
 }
 
+/// Ordinal multiplication is associative and left-distributive over addition,
+/// but NOT commutative for transfinite ordinals.
+/// For example, `2 * w = w` but `w * 2 = w + w`.
+///
+/// # Overflow Behavior
+///
+/// Finite ordinal multiplication uses saturating arithmetic. Multiplying two finite
+/// ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
 impl Mul<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -726,7 +741,7 @@ impl Mul<Ordinal> for Ordinal {
             // Case 1: Any multiplication by zero is zero
             (Ordinal::Finite(0), _) | (_, Ordinal::Finite(0)) => Ordinal::zero(),
 
-            // Case 2: Finite × Finite behaves like integer multiplication
+            // Case 2: Finite x Finite behaves like integer multiplication
             // Use saturating arithmetic to prevent overflow
             (Ordinal::Finite(m), Ordinal::Finite(n)) => Ordinal::new_finite(m.saturating_mul(n)),
 
@@ -816,6 +831,13 @@ impl Mul<&Ordinal> for &Ordinal {
     }
 }
 
+/// Ordinal exponentiation. Note that ordinal exponentiation is NOT associative:
+/// `w^(1^w) = w` but `(w^1)^w = w^w`.
+///
+/// # Overflow Behavior
+///
+/// Finite ordinal exponentiation uses saturating arithmetic. Computing `m^n` for
+/// finite ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
 impl Pow<Ordinal> for Ordinal {
     type Output = Self;
 
