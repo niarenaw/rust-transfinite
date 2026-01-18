@@ -586,6 +586,12 @@ impl PartialEq for Ordinal {
 
 impl Eq for Ordinal {}
 
+impl From<u32> for Ordinal {
+    fn from(n: u32) -> Self {
+        Ordinal::new_finite(n)
+    }
+}
+
 impl PartialOrd for Ordinal {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
