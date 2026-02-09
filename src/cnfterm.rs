@@ -140,7 +140,7 @@ impl CnfTerm {
     /// Creates a finite CNF term (ω^0 · n = n).
     ///
     /// This is a convenience constructor for creating terms that represent finite numbers.
-    /// Equivalent to `CnfTerm::new(&Ordinal::Finite(0), n).unwrap()`.
+    /// Constructs the term directly, bypassing `Result` machinery.
     ///
     /// # Arguments
     ///
@@ -160,7 +160,11 @@ impl CnfTerm {
     ///
     /// Panics if `n` is 0, as multiplicity must be positive.
     pub fn new_finite(n: u32) -> Self {
-        CnfTerm::new(&Ordinal::Finite(0), n).unwrap()
+        assert!(n > 0, "CnfTerm multiplicity must be positive, got 0");
+        CnfTerm {
+            exponent: Ordinal::Finite(0),
+            multiplicity: n,
+        }
     }
 
     /// Returns the exponent of this CNF term.
