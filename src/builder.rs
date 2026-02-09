@@ -84,42 +84,138 @@ impl OrdinalBuilder {
         self
     }
 
-    /// Adds w (omega) as a term.
+    /// Adds ω (omega) as a term with multiplicity 1.
+    ///
+    /// Equivalent to `.term(Ordinal::one(), 1)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::builder().omega().build().unwrap();
+    /// assert_eq!(omega, Ordinal::omega());
+    /// ```
     pub fn omega(self) -> Self {
         self.term(Ordinal::one(), 1)
     }
 
-    /// Adds w*n (omega times n).
+    /// Adds ω · n (omega times n) as a term.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega_times_3 = Ordinal::builder().omega_times(3).build().unwrap();
+    /// assert!(omega_times_3.is_transfinite());
+    /// ```
     pub fn omega_times(self, multiplicity: u32) -> Self {
         self.term(Ordinal::one(), multiplicity)
     }
 
-    /// Adds w^n (omega to the power n).
+    /// Adds ω^n (omega to a finite power) as a term with multiplicity 1.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega_cubed = Ordinal::builder().omega_power(3).build().unwrap();
+    /// assert!(omega_cubed.is_transfinite());
+    /// ```
     pub fn omega_power(self, exponent: u32) -> Self {
         self.term(Ordinal::new_finite(exponent), 1)
     }
 
-    /// Adds w^exp * mult (omega power with multiplicity).
+    /// Adds ω^n · m (omega to a finite power with multiplicity).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// // ω² · 5
+    /// let ordinal = Ordinal::builder().omega_power_times(2, 5).build().unwrap();
+    /// assert!(ordinal.is_transfinite());
+    /// ```
     pub fn omega_power_times(self, exponent: u32, multiplicity: u32) -> Self {
         self.term(Ordinal::new_finite(exponent), multiplicity)
     }
 
-    /// Adds w^exp where exp is a transfinite ordinal.
+    /// Adds ω^exp as a term, where `exp` is a transfinite ordinal.
+    ///
+    /// Use this for ordinals like ω^ω or ω^(ω²).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::omega();
+    /// let omega_to_omega = Ordinal::builder().omega_exp(omega).build().unwrap();
+    /// assert!(omega_to_omega.is_transfinite());
+    /// ```
     pub fn omega_exp(self, exponent: Ordinal) -> Self {
         self.term(exponent, 1)
     }
 
-    /// Adds w^exp * mult where exp is a transfinite ordinal.
+    /// Adds ω^exp · mult, where `exp` is a transfinite ordinal.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::omega();
+    /// let ordinal = Ordinal::builder().omega_exp_times(omega, 3).build().unwrap();
+    /// assert!(ordinal.is_transfinite());
+    /// ```
     pub fn omega_exp_times(self, exponent: Ordinal, multiplicity: u32) -> Self {
         self.term(exponent, multiplicity)
     }
 
-    /// Adds a finite constant term (+n).
+    /// Adds a finite constant term (+n) to the ordinal.
+    ///
+    /// This is typically the last term in a CNF expression.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let seven = Ordinal::builder().plus(7).build().unwrap();
+    /// assert_eq!(seven, Ordinal::new_finite(7));
+    /// ```
     pub fn plus(self, n: u32) -> Self {
         self.term(Ordinal::zero(), n)
     }
 
     /// Builds the ordinal from accumulated terms.
+    ///
+    /// Returns `Ok(Ordinal::zero())` if no terms were added.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrdinalError`] if:
+    /// - A term was added with zero multiplicity
+    /// - Terms were not added in strictly decreasing exponent order
+    /// - The resulting CNF is otherwise invalid
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let ordinal = Ordinal::builder()
+    ///     .omega_power(2)
+    ///     .omega_times(3)
+    ///     .plus(7)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// assert!(ordinal.is_transfinite());
+    /// ```
     pub fn build(self) -> Result<Ordinal> {
         if let Some(e) = self.error {
             return Err(e);
@@ -137,6 +233,20 @@ impl OrdinalBuilder {
     }
 
     /// Builds the ordinal, panicking on any error.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the accumulated terms form an invalid CNF expression.
+    /// Prefer [`build`](Self::build) for fallible construction.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::builder().omega().build_unchecked();
+    /// assert_eq!(omega, Ordinal::omega());
+    /// ```
     pub fn build_unchecked(self) -> Ordinal {
         self.build().expect("OrdinalBuilder: invalid construction")
     }

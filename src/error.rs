@@ -18,7 +18,7 @@ use thiserror::Error;
 /// let result = Ordinal::new_transfinite(&vec![]);
 /// assert!(matches!(result, Err(OrdinalError::TransfiniteConstructionError)));
 /// ```
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum OrdinalError {
     /// Error when constructing a CNF term with invalid parameters.
     ///

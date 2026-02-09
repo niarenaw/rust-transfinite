@@ -1,5 +1,4 @@
 use num_traits::Pow;
-use std::cmp::{Ord, PartialOrd};
 use std::ops::{Add, Mul};
 
 use crate::cnfterm::CnfTerm;
@@ -29,7 +28,7 @@ use crate::error::{OrdinalError, Result};
 /// # Invariants
 ///
 /// - Finite ordinals must use the `Finite` variant (never represented as transfinite with exponent 0)
-/// - CNF terms must be in strictly decreasing order by exponent (currently not fully validated - see TODO)
+/// - CNF terms must be in strictly decreasing order by exponent
 /// - All CNF term multiplicities must be positive (non-zero)
 /// - The leading CNF term must have a non-finite exponent
 ///
@@ -212,30 +211,27 @@ impl Ordinal {
     /// For a more ergonomic API, see [`Ordinal::builder`] which provides a fluent
     /// interface for constructing ordinals without manually creating [`CnfTerm`]s.
     pub fn new_transfinite(terms: &[CnfTerm]) -> Result<Self> {
-        // Validate terms vector is non-empty
+        Self::validate_cnf_terms(terms)?;
+        Ok(Ordinal::Transfinite(terms.to_vec()))
+    }
+
+    /// Validates that CNF terms satisfy ordering and leading-term constraints.
+    fn validate_cnf_terms(terms: &[CnfTerm]) -> Result<()> {
         match terms.first() {
             None => return Err(OrdinalError::TransfiniteConstructionError),
-            Some(term) => {
-                // Validate leading term is transfinite (has non-zero exponent)
-                if term.is_finite() {
-                    return Err(OrdinalError::TransfiniteConstructionError);
-                }
+            Some(term) if term.is_finite() => {
+                return Err(OrdinalError::TransfiniteConstructionError);
             }
+            _ => {}
         }
 
-        // Validate terms are in strictly decreasing order by exponent
-        // In CNF: β₁ > β₂ > ... > βₙ (strictly decreasing)
-        for i in 0..terms.len() - 1 {
-            let current_exponent = terms[i].exponent();
-            let next_exponent = terms[i + 1].exponent();
-
-            // Terms must be in strictly decreasing order
-            if current_exponent <= next_exponent {
+        for pair in terms.windows(2) {
+            if pair[0].exponent_ref() <= pair[1].exponent_ref() {
                 return Err(OrdinalError::TransfiniteConstructionError);
             }
         }
 
-        Ok(Ordinal::Transfinite(terms.to_vec()))
+        Ok(())
     }
 
     /// Returns `true` if this is a limit ordinal.
@@ -268,7 +264,10 @@ impl Ordinal {
         match self {
             Ordinal::Finite(0) => true,
             Ordinal::Finite(_) => false,
-            Ordinal::Transfinite(terms) => terms.last().unwrap().is_limit(),
+            Ordinal::Transfinite(terms) => terms
+                .last()
+                .expect("transfinite ordinals always have at least one CNF term")
+                .is_limit(),
         }
     }
 
@@ -558,8 +557,9 @@ impl Ordinal {
     /// Omega is represented in CNF as ω^1·1, i.e., a single term with exponent 1
     /// and multiplicity 1.
     pub fn omega() -> Self {
-        let omega_term = CnfTerm::new(&Ordinal::one(), 1).unwrap();
-        Ordinal::new_transfinite(&[omega_term]).unwrap()
+        let omega_term =
+            CnfTerm::new(&Ordinal::one(), 1).expect("omega term has positive multiplicity");
+        Ordinal::new_transfinite(&[omega_term]).expect("single transfinite term is valid CNF")
     }
 
     /// Creates a new [`OrdinalBuilder`](crate::OrdinalBuilder) for fluent ordinal construction.
@@ -609,15 +609,15 @@ impl Ordinal {
 impl std::fmt::Display for Ordinal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Ordinal::Finite(n) => write!(f, "{}", n),
+            Ordinal::Finite(n) => write!(f, "{n}"),
             Ordinal::Transfinite(terms) => {
-                let result = terms
-                    .iter()
-                    .map(|term| term.to_string())
-                    .collect::<Vec<String>>()
-                    .join(" + ");
-
-                write!(f, "{}", result)
+                for (i, term) in terms.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " + ")?;
+                    }
+                    write!(f, "{term}")?;
+                }
+                Ok(())
             }
         }
     }
@@ -722,17 +722,19 @@ impl Add<Ordinal> for Ordinal {
                                     .multiplicity()
                                     .saturating_add(leading_mult_rhs),
                             )
-                            .unwrap(),
+                            .expect("combined CNF term has positive multiplicity"),
                         );
                         // Move remaining terms from rhs
                         new_terms.extend_from_slice(&terms_rhs[1..]);
-                        Ordinal::new_transfinite(&new_terms).unwrap()
+                        Ordinal::new_transfinite(&new_terms)
+                            .expect("addition preserves CNF ordering")
                     } else {
                         // No matching exponent - concatenate
                         let mut new_terms = terms_lhs[..index_lhs + 1].to_vec();
                         // Move all terms from rhs
                         new_terms.append(&mut terms_rhs);
-                        Ordinal::new_transfinite(&new_terms).unwrap()
+                        Ordinal::new_transfinite(&new_terms)
+                            .expect("concatenated terms maintain CNF ordering")
                     }
                 }
             }
@@ -772,7 +774,10 @@ impl Add<&Ordinal> for &Ordinal {
 ///
 /// Finite ordinal multiplication uses saturating arithmetic. Multiplying two finite
 /// ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
-#[allow(clippy::suspicious_arithmetic_impl)]
+// Ordinal multiplication legitimately pattern-matches on zero in a way
+// that looks "suspicious" to clippy but is mathematically correct:
+// any ordinal multiplied by zero equals zero (absorbing element).
+#[expect(clippy::suspicious_arithmetic_impl)]
 impl Mul<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -787,7 +792,9 @@ impl Mul<Ordinal> for Ordinal {
 
             // Case 3: Finite × Transfinite - move terms_rhs instead of cloning
             (Ordinal::Finite(m), Ordinal::Transfinite(mut terms_rhs)) => {
-                let last_term_rhs = terms_rhs.pop().unwrap();
+                let last_term_rhs = terms_rhs
+                    .pop()
+                    .expect("transfinite ordinals always have at least one CNF term");
                 if last_term_rhs.is_finite() {
                     // Use saturating_mul to prevent overflow
                     terms_rhs.push(CnfTerm::new_finite(
@@ -796,7 +803,8 @@ impl Mul<Ordinal> for Ordinal {
                 } else {
                     terms_rhs.push(last_term_rhs);
                 }
-                Ordinal::new_transfinite(&terms_rhs).unwrap()
+                Ordinal::new_transfinite(&terms_rhs)
+                    .expect("scaling finite term preserves CNF validity")
             }
 
             // Case 4: Transfinite × Finite - move and modify terms_lhs in place
@@ -806,8 +814,9 @@ impl Mul<Ordinal> for Ordinal {
                     &terms_lhs[0].exponent(),
                     terms_lhs[0].multiplicity().saturating_mul(n),
                 )
-                .unwrap();
-                Ordinal::new_transfinite(&terms_lhs).unwrap()
+                .expect("scaled multiplicity is positive when n > 0");
+                Ordinal::new_transfinite(&terms_lhs)
+                    .expect("scaling leading multiplicity preserves CNF ordering")
             }
 
             // Case 5: Transfinite × Transfinite - complex CNF multiplication
@@ -817,35 +826,41 @@ impl Mul<Ordinal> for Ordinal {
                 // Extract needed values before consuming the vecs
                 let leading_exp_lhs = terms_lhs[0].exponent();
                 let leading_mult_lhs = terms_lhs[0].multiplicity();
-                let rhs_is_limit = terms_rhs.last().unwrap().is_limit();
-                let trailing_mult_rhs = terms_rhs.last().unwrap().multiplicity();
+                let rhs_is_limit = terms_rhs
+                    .last()
+                    .expect("transfinite ordinals always have at least one CNF term")
+                    .is_limit();
+                let trailing_mult_rhs = terms_rhs
+                    .last()
+                    .expect("transfinite ordinals always have at least one CNF term")
+                    .multiplicity();
                 let rhs_len = terms_rhs.len();
 
                 if rhs_is_limit {
                     // Consume terms_rhs by moving instead of cloning
                     new_terms.extend(terms_rhs.into_iter().map(|term| {
                         CnfTerm::new(&(&leading_exp_lhs + term.exponent()), term.multiplicity())
-                            .unwrap()
+                            .expect("exponent addition and positive multiplicity yield valid term")
                     }));
                 } else {
                     // Consume all but the last term from rhs
                     new_terms.extend(terms_rhs.into_iter().take(rhs_len - 1).map(|term| {
                         CnfTerm::new(&(&leading_exp_lhs + term.exponent()), term.multiplicity())
-                            .unwrap()
+                            .expect("exponent addition and positive multiplicity yield valid term")
                     }));
                     new_terms.push(
                         CnfTerm::new(
                             &leading_exp_lhs,
                             leading_mult_lhs.saturating_mul(trailing_mult_rhs),
                         )
-                        .unwrap(),
+                        .expect("product of positive multiplicities is positive"),
                     );
 
                     // Move non-leading terms from lhs instead of cloning
                     new_terms.extend(terms_lhs.into_iter().skip(1));
                 }
 
-                Ordinal::new_transfinite(&new_terms).unwrap()
+                Ordinal::new_transfinite(&new_terms).expect("multiplication preserves CNF ordering")
             }
         }
     }
@@ -903,9 +918,15 @@ impl Pow<Ordinal> for Ordinal {
 
             (lhs @ Ordinal::Transfinite(_), rhs) => {
                 if rhs.is_limit() {
-                    let leading_exp = lhs.leading_cnf_term().unwrap().exponent();
+                    let leading_exp = lhs
+                        .leading_cnf_term()
+                        .expect("transfinite ordinal has a leading term")
+                        .exponent();
                     let new_exponent = leading_exp * rhs;
-                    Ordinal::new_transfinite(&[CnfTerm::new(&new_exponent, 1).unwrap()]).unwrap()
+                    Ordinal::new_transfinite(&[
+                        CnfTerm::new(&new_exponent, 1).expect("positive multiplicity")
+                    ])
+                    .expect("single term is valid CNF")
                 } else if let Ordinal::Finite(n) = rhs {
                     // Binary exponentiation for finite exponents. Valid because
                     // ordinal multiplication is associative: (a * b) * c = a * (b * c)
@@ -925,7 +946,10 @@ impl Pow<Ordinal> for Ordinal {
                                 distributed * binary_pow(lhs.clone(), term.multiplicity());
                         } else {
                             distributed = distributed
-                                * lhs.clone().pow(Ordinal::new_transfinite(&[term]).unwrap());
+                                * lhs.clone().pow(
+                                    Ordinal::new_transfinite(&[term])
+                                        .expect("single term is valid CNF"),
+                                );
                         }
                     }
                     distributed
@@ -950,23 +974,22 @@ impl Pow<Ordinal> for Ordinal {
                                     &Ordinal::new_finite(k),
                                     1,
                                 )
-                                .unwrap()])
-                                .unwrap();
+                                .expect("positive multiplicity for omega power")])
+                                .expect("single CNF term is valid");
                         } else if let Ordinal::Finite(e_val) = &e {
                             // n^(w^e * k) = w^(w^(e-1) * k) for finite e > 1
                             let inner_exp = Ordinal::new_transfinite(&[CnfTerm::new(
                                 &Ordinal::new_finite(e_val - 1),
                                 k,
                             )
-                            .unwrap()])
-                            .unwrap();
+                            .expect("positive multiplicity for inner exponent")])
+                            .expect("inner exponent is valid CNF");
                             distributed = distributed
-                                * Ordinal::new_transfinite(&[CnfTerm::new(&inner_exp, 1).unwrap()])
-                                    .unwrap();
+                                * Ordinal::new_transfinite(&[CnfTerm::new(&inner_exp, 1)
+                                    .expect("positive multiplicity for outer term")])
+                                .expect("single CNF term is valid");
                         } else {
-                            unimplemented!(
-                                "Finite base with transfinite tower exponent not yet supported"
-                            )
+                            todo!("finite base with transfinite tower exponent (e.g., 2^(ω^ω·3))")
                         }
                     }
                 }
@@ -977,6 +1000,10 @@ impl Pow<Ordinal> for Ordinal {
 }
 
 /// Binary exponentiation with O(log n) multiplications.
+///
+/// Exploits associativity of ordinal multiplication for finite exponents.
+/// Cloning within the loop is inherent to the algorithm: we need the base
+/// for both the accumulator multiplication and the squaring step.
 fn binary_pow(base: Ordinal, exp: u32) -> Ordinal {
     if exp == 0 {
         return Ordinal::one();
@@ -989,17 +1016,18 @@ fn binary_pow(base: Ordinal, exp: u32) -> Ordinal {
     let mut exp = exp;
     let mut result = Ordinal::one();
 
-    while exp > 0 {
+    while exp > 1 {
         if exp % 2 == 1 {
             result = result * base.clone();
         }
         exp /= 2;
-        if exp > 0 {
-            let b = base;
-            base = b.clone() * b;
-        }
+        base = {
+            let b = base.clone();
+            b.clone() * b
+        };
     }
-    result
+    // Final iteration: consume base by move, avoiding one clone.
+    result * base
 }
 
 impl Pow<&Ordinal> for Ordinal {
@@ -1121,15 +1149,15 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone().pow(three.clone()), Ordinal::new_finite(8));
-        assert_eq!(three.clone().pow(two.clone()), Ordinal::new_finite(9));
+        assert_eq!(three.pow(two.clone()), Ordinal::new_finite(9));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone().pow(one.clone()), Ordinal::zero());
         assert_eq!(one.clone().pow(zero.clone()), Ordinal::one());
-        assert_eq!(one.clone().pow(one.clone()), Ordinal::one());
-        assert_eq!(two.clone().pow(zero.clone()), Ordinal::one());
+        assert_eq!(one.clone().pow(one), Ordinal::one());
+        assert_eq!(two.clone().pow(zero), Ordinal::one());
 
         // Test transfinite ordinal powers
         let omega = Ordinal::omega();
@@ -1138,12 +1166,11 @@ mod tests {
         assert_eq!(omega.clone().pow(two.clone()), omega_squared);
 
         // Test omega^omega
-        let omega_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        let omega_omega = Ordinal::new_transfinite(&[CnfTerm::new(&omega, 1).unwrap()]).unwrap();
         assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
 
         // Test finite * transfinite power
-        assert_eq!(two.clone().pow(omega.clone()), omega);
+        assert_eq!(two.pow(omega.clone()), omega);
     }
 
     #[test]
@@ -1164,7 +1191,7 @@ mod tests {
         // ω^4 = ω^4
         let omega_fourth =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(4), 1).unwrap()]).unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(4)), omega_fourth);
+        assert_eq!(omega.pow(Ordinal::new_finite(4)), omega_fourth);
     }
 
     #[test]
@@ -1187,7 +1214,7 @@ mod tests {
         let omega_32 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(32), 1).unwrap()])
                 .unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(32)), omega_32);
+        assert_eq!(omega.pow(Ordinal::new_finite(32)), omega_32);
     }
 
     #[test]
@@ -1205,7 +1232,7 @@ mod tests {
         let omega_255 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(255), 1).unwrap()])
                 .unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(255)), omega_255);
+        assert_eq!(omega.pow(Ordinal::new_finite(255)), omega_255);
     }
 
     #[test]
@@ -1251,7 +1278,7 @@ mod tests {
         // ω^7
         let omega_7 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(7), 1).unwrap()]).unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(7)), omega_7);
+        assert_eq!(omega.pow(Ordinal::new_finite(7)), omega_7);
     }
 
     #[test]
@@ -1260,14 +1287,14 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone() + three.clone(), Ordinal::new_finite(5));
-        assert_eq!(three.clone() + two.clone(), Ordinal::new_finite(5));
+        assert_eq!(three + two.clone(), Ordinal::new_finite(5));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone() + one.clone(), Ordinal::one());
         assert_eq!(one.clone() + zero.clone(), Ordinal::one());
-        assert_eq!(zero.clone() + zero.clone(), Ordinal::zero());
+        assert_eq!(zero.clone() + zero, Ordinal::zero());
 
         // Test transfinite ordinal addition
         let omega = Ordinal::omega();
@@ -1276,7 +1303,7 @@ mod tests {
             CnfTerm::new_finite(1),
         ])
         .unwrap();
-        assert_eq!(omega.clone() + one.clone(), omega_plus_one);
+        assert_eq!(omega.clone() + one, omega_plus_one);
 
         // Test omega + omega
         let two_omega =
@@ -1286,7 +1313,7 @@ mod tests {
         // Test finite + transfinite
         let omega_plus_two = omega.successor().successor();
         assert_eq!(two.clone() + omega.clone(), omega);
-        assert_eq!(omega.clone() + two.clone(), omega_plus_two);
+        assert_eq!(omega + two, omega_plus_two);
     }
 
     #[test]
@@ -1295,16 +1322,16 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone() * three.clone(), Ordinal::new_finite(6));
-        assert_eq!(three.clone() * two.clone(), Ordinal::new_finite(6));
+        assert_eq!(three * two.clone(), Ordinal::new_finite(6));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone() * one.clone(), Ordinal::zero());
-        assert_eq!(one.clone() * zero.clone(), Ordinal::zero());
+        assert_eq!(one.clone() * zero, Ordinal::zero());
         assert_eq!(one.clone() * one.clone(), Ordinal::one());
         assert_eq!(two.clone() * one.clone(), Ordinal::new_finite(2));
-        assert_eq!(one.clone() * two.clone(), Ordinal::new_finite(2));
+        assert_eq!(one * two.clone(), Ordinal::new_finite(2));
 
         // Test transfinite ordinal multiplication
         let omega = Ordinal::omega();
@@ -1321,7 +1348,7 @@ mod tests {
         let two_omega =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
         assert_eq!(two.clone() * omega.clone(), omega);
-        assert_eq!(omega.clone() * two.clone(), two_omega);
+        assert_eq!(omega * two, two_omega);
     }
 
     #[test]

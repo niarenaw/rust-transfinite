@@ -1,3 +1,6 @@
+#![deny(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+
 //! Transfinite ordinal arithmetic library supporting ordinals up to ε₀.
 //!
 //! This library implements ordinal number arithmetic using [Cantor Normal Form](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Cantor_normal_form) (CNF)

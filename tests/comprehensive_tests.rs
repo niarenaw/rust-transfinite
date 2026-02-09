@@ -157,7 +157,7 @@ mod ordinal_properties {
         // ω + 1 = ω + 1 (successor of omega)
         let omega_plus_one = omega.clone() + one.clone();
         assert_ne!(omega_plus_one, omega);
-        assert_ne!(omega_plus_one, one.clone() + omega.clone());
+        assert_ne!(omega_plus_one, one + omega);
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod ordinal_properties {
         assert_eq!(omega.clone() + omega_squared.clone(), omega_squared);
 
         // ω² + ω = ω² + ω (different from ω + ω²)
-        let omega_squared_plus_omega = omega_squared.clone() + omega.clone();
+        let omega_squared_plus_omega = omega_squared.clone() + omega;
         assert_ne!(omega_squared_plus_omega, omega_squared);
         assert!(omega_squared_plus_omega > omega_squared);
     }
@@ -287,7 +287,7 @@ mod ordinal_properties {
         assert_eq!(omega.clone() * two.clone(), two_omega);
 
         // They're different!
-        assert_ne!(two.clone() * omega.clone(), omega.clone() * two.clone());
+        assert_ne!(two.clone() * omega.clone(), omega * two);
     }
 
     #[test]
@@ -313,7 +313,7 @@ mod ordinal_properties {
 
         // ω · 3 = ω + ω + ω
         let three_omega = Ordinal::builder().omega_times(3).build().unwrap();
-        assert_eq!(omega.clone() * Ordinal::new_finite(3), three_omega);
+        assert_eq!(omega * Ordinal::new_finite(3), three_omega);
     }
 
     #[test]
@@ -351,7 +351,7 @@ mod ordinal_properties {
         let omega = Ordinal::omega();
 
         let left = (one.clone() + one.clone()) * omega.clone(); // 2 · ω = ω
-        let right = (one.clone() * omega.clone()) + (one.clone() * omega.clone()); // ω + ω = ω·2
+        let right = (one.clone() * omega.clone()) + (one * omega); // ω + ω = ω·2
 
         assert_ne!(
             left, right,
@@ -446,23 +446,21 @@ mod ordinal_properties {
 
         // (w+1)^w = w^w (successor base to limit exponent)
         let omega_plus_1 = omega.clone() + Ordinal::one();
-        let result = omega_plus_1.clone().pow(omega.clone());
-        let omega_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        let result = omega_plus_1.pow(omega.clone());
+        let omega_omega = Ordinal::new_transfinite(&[CnfTerm::new(&omega, 1).unwrap()]).unwrap();
         assert_eq!(result, omega_omega);
 
         // 2^(w^2) = w^w
         let omega_squared =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
-        let result = Ordinal::new_finite(2).pow(omega_squared.clone());
-        let omega_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        let result = Ordinal::new_finite(2).pow(omega_squared);
+        let omega_omega = Ordinal::new_transfinite(&[CnfTerm::new(&omega, 1).unwrap()]).unwrap();
         assert_eq!(result, omega_omega);
 
         // w^(w^2) - exponent is itself transfinite
         let omega_squared =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap()]).unwrap();
-        let result = omega.clone().pow(omega_squared.clone());
+        let result = omega.pow(omega_squared.clone());
         let expected =
             Ordinal::new_transfinite(&[CnfTerm::new(&omega_squared, 1).unwrap()]).unwrap();
         assert_eq!(result, expected);
@@ -477,13 +475,13 @@ mod ordinal_properties {
         let base = Ordinal::new_finite(2);
         let exp_sum = two.clone() + three.clone();
         let left = base.clone().pow(exp_sum);
-        let right = base.clone().pow(two.clone()) * base.clone().pow(three.clone());
+        let right = base.clone().pow(two.clone()) * base.pow(three.clone());
         assert_eq!(left, right);
 
         // (α^β)^γ = α^(β·γ) for finite values
         let base = Ordinal::new_finite(2);
         let left = base.clone().pow(two.clone()).pow(three.clone());
-        let right = base.clone().pow(two.clone() * three.clone());
+        let right = base.pow(two * three);
         assert_eq!(left, right);
     }
 
@@ -647,7 +645,7 @@ mod ordinal_properties {
         ])
         .unwrap();
 
-        let sum = ord1 + ord2.clone();
+        let sum = ord1 + ord2;
 
         // Result should be ω²·2 + 5
         let expected = Ordinal::new_transfinite(&[
@@ -735,7 +733,7 @@ mod integration_tests {
         let omega_omega = omega.clone().pow(omega.clone());
 
         // Various ordinals that might appear
-        let ord1 = omega.clone().pow(Ordinal::new_finite(2)) + omega.clone();
+        let ord1 = omega.clone().pow(Ordinal::new_finite(2)) + omega;
         let ord2 = omega_omega.clone() + Ordinal::one();
 
         assert!(ord1 < omega_omega);
