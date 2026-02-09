@@ -1,6 +1,3 @@
-// TODO: add examples from
-// https://theory.stanford.edu/~tingz/talks/
-
 #[cfg(test)]
 mod tests {
 

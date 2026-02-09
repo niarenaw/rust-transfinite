@@ -989,7 +989,6 @@ impl Pow<Ordinal> for Ordinal {
                                     .expect("positive multiplicity for outer term")])
                                 .expect("single CNF term is valid");
                         } else {
-                            // TODO(issue): Support finite base with transfinite tower exponent
                             todo!("finite base with transfinite tower exponent (e.g., 2^(ω^ω·3))")
                         }
                     }
