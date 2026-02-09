@@ -102,7 +102,7 @@ fn test_addition_with_zero() {
 
     // n + 0 = n (right identity)
     assert_eq!(five.clone() + zero.clone(), five);
-    assert_eq!(omega.clone() + zero.clone(), omega);
+    assert_eq!(omega.clone() + zero, omega);
 }
 
 #[test]
@@ -116,8 +116,8 @@ fn test_multiplication_with_zero() {
     assert_eq!(zero.clone() * omega.clone(), zero);
 
     // n · 0 = 0 (right absorbing)
-    assert_eq!(five.clone() * zero.clone(), zero);
-    assert_eq!(omega.clone() * zero.clone(), zero);
+    assert_eq!(five * zero.clone(), zero);
+    assert_eq!(omega * zero.clone(), zero);
 }
 
 #[test]
@@ -132,7 +132,7 @@ fn test_multiplication_with_one() {
 
     // n · 1 = n (right identity)
     assert_eq!(five.clone() * one.clone(), five);
-    assert_eq!(omega.clone() * one.clone(), omega);
+    assert_eq!(omega.clone() * one, omega);
 }
 
 #[test]
@@ -146,9 +146,9 @@ fn test_exponentiation_zero_base() {
     assert_eq!(zero.clone().pow(zero.clone()), one);
 
     // 0^n = 0 for n > 0
-    assert_eq!(zero.clone().pow(one.clone()), zero);
-    assert_eq!(zero.clone().pow(five.clone()), zero);
-    assert_eq!(zero.clone().pow(omega.clone()), zero);
+    assert_eq!(zero.clone().pow(one), zero);
+    assert_eq!(zero.clone().pow(five), zero);
+    assert_eq!(zero.clone().pow(omega), zero);
 }
 
 #[test]
@@ -161,8 +161,8 @@ fn test_exponentiation_zero_exponent() {
     // n^0 = 1 for all n
     assert_eq!(zero.clone().pow(zero.clone()), one);
     assert_eq!(one.clone().pow(zero.clone()), one);
-    assert_eq!(five.clone().pow(zero.clone()), one);
-    assert_eq!(omega.clone().pow(zero.clone()), one);
+    assert_eq!(five.pow(zero.clone()), one);
+    assert_eq!(omega.pow(zero), one);
 }
 
 #[test]
@@ -173,10 +173,10 @@ fn test_exponentiation_one_base() {
     let omega = Ordinal::omega();
 
     // 1^n = 1 for all n
-    assert_eq!(one.clone().pow(zero.clone()), one);
+    assert_eq!(one.clone().pow(zero), one);
     assert_eq!(one.clone().pow(one.clone()), one);
-    assert_eq!(one.clone().pow(five.clone()), one);
-    assert_eq!(one.clone().pow(omega.clone()), one);
+    assert_eq!(one.clone().pow(five), one);
+    assert_eq!(one.clone().pow(omega), one);
 }
 
 #[test]
@@ -190,7 +190,7 @@ fn test_exponentiation_one_exponent() {
     assert_eq!(zero.clone().pow(one.clone()), zero);
     assert_eq!(one.clone().pow(one.clone()), one);
     assert_eq!(five.clone().pow(one.clone()), five);
-    assert_eq!(omega.clone().pow(one.clone()), omega);
+    assert_eq!(omega.clone().pow(one), omega);
 }
 
 // ========================================
@@ -200,7 +200,7 @@ fn test_exponentiation_one_exponent() {
 #[test]
 fn test_large_finite_addition() {
     let max_half = Ordinal::new_finite(u32::MAX / 2);
-    let result = max_half.clone() + max_half.clone();
+    let result = max_half.clone() + max_half;
 
     // Should not panic, but will wrap around due to u32 arithmetic
     assert!(result.is_finite());
@@ -315,7 +315,7 @@ fn test_reference_arithmetic() {
     assert_eq!(&five + &three, Ordinal::new_finite(8));
     assert_eq!(five.clone() + &three, Ordinal::new_finite(8));
     assert_eq!(&five + three.clone(), Ordinal::new_finite(8));
-    assert_eq!(five.clone() + three.clone(), Ordinal::new_finite(8));
+    assert_eq!(five + three, Ordinal::new_finite(8));
 }
 
 #[test]
@@ -327,7 +327,7 @@ fn test_reference_multiplication() {
     assert_eq!(&five * &three, Ordinal::new_finite(15));
     assert_eq!(five.clone() * &three, Ordinal::new_finite(15));
     assert_eq!(&five * three.clone(), Ordinal::new_finite(15));
-    assert_eq!(five.clone() * three.clone(), Ordinal::new_finite(15));
+    assert_eq!(five * three, Ordinal::new_finite(15));
 }
 
 #[test]
@@ -339,5 +339,5 @@ fn test_reference_exponentiation() {
     assert_eq!((&two).pow(&three), Ordinal::new_finite(8));
     assert_eq!(two.clone().pow(&three), Ordinal::new_finite(8));
     assert_eq!((&two).pow(three.clone()), Ordinal::new_finite(8));
-    assert_eq!(two.clone().pow(three.clone()), Ordinal::new_finite(8));
+    assert_eq!(two.pow(three), Ordinal::new_finite(8));
 }

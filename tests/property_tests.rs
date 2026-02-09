@@ -1,3 +1,6 @@
+// prop_assert_eq! moves its arguments, causing false redundant_clone positives from clippy.
+#![allow(clippy::redundant_clone)]
+
 use proptest::prelude::*;
 use transfinite::{CnfTerm, Ordinal};
 
@@ -104,7 +107,7 @@ proptest! {
 
     #[test]
     fn successor_is_greater(a in arb_ordinal()) {
-        let succ = a.clone().successor();
+        let succ = a.successor();
         prop_assert!(succ > a);
     }
 

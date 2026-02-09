@@ -1149,15 +1149,15 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone().pow(three.clone()), Ordinal::new_finite(8));
-        assert_eq!(three.clone().pow(two.clone()), Ordinal::new_finite(9));
+        assert_eq!(three.pow(two.clone()), Ordinal::new_finite(9));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone().pow(one.clone()), Ordinal::zero());
         assert_eq!(one.clone().pow(zero.clone()), Ordinal::one());
-        assert_eq!(one.clone().pow(one.clone()), Ordinal::one());
-        assert_eq!(two.clone().pow(zero.clone()), Ordinal::one());
+        assert_eq!(one.clone().pow(one), Ordinal::one());
+        assert_eq!(two.clone().pow(zero), Ordinal::one());
 
         // Test transfinite ordinal powers
         let omega = Ordinal::omega();
@@ -1166,12 +1166,11 @@ mod tests {
         assert_eq!(omega.clone().pow(two.clone()), omega_squared);
 
         // Test omega^omega
-        let omega_omega =
-            Ordinal::new_transfinite(&[CnfTerm::new(&omega.clone(), 1).unwrap()]).unwrap();
+        let omega_omega = Ordinal::new_transfinite(&[CnfTerm::new(&omega, 1).unwrap()]).unwrap();
         assert_eq!(omega.clone().pow(omega.clone()), omega_omega);
 
         // Test finite * transfinite power
-        assert_eq!(two.clone().pow(omega.clone()), omega);
+        assert_eq!(two.pow(omega.clone()), omega);
     }
 
     #[test]
@@ -1192,7 +1191,7 @@ mod tests {
         // ω^4 = ω^4
         let omega_fourth =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(4), 1).unwrap()]).unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(4)), omega_fourth);
+        assert_eq!(omega.pow(Ordinal::new_finite(4)), omega_fourth);
     }
 
     #[test]
@@ -1215,7 +1214,7 @@ mod tests {
         let omega_32 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(32), 1).unwrap()])
                 .unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(32)), omega_32);
+        assert_eq!(omega.pow(Ordinal::new_finite(32)), omega_32);
     }
 
     #[test]
@@ -1233,7 +1232,7 @@ mod tests {
         let omega_255 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(255), 1).unwrap()])
                 .unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(255)), omega_255);
+        assert_eq!(omega.pow(Ordinal::new_finite(255)), omega_255);
     }
 
     #[test]
@@ -1279,7 +1278,7 @@ mod tests {
         // ω^7
         let omega_7 =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::new_finite(7), 1).unwrap()]).unwrap();
-        assert_eq!(omega.clone().pow(Ordinal::new_finite(7)), omega_7);
+        assert_eq!(omega.pow(Ordinal::new_finite(7)), omega_7);
     }
 
     #[test]
@@ -1288,14 +1287,14 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone() + three.clone(), Ordinal::new_finite(5));
-        assert_eq!(three.clone() + two.clone(), Ordinal::new_finite(5));
+        assert_eq!(three + two.clone(), Ordinal::new_finite(5));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone() + one.clone(), Ordinal::one());
         assert_eq!(one.clone() + zero.clone(), Ordinal::one());
-        assert_eq!(zero.clone() + zero.clone(), Ordinal::zero());
+        assert_eq!(zero.clone() + zero, Ordinal::zero());
 
         // Test transfinite ordinal addition
         let omega = Ordinal::omega();
@@ -1304,7 +1303,7 @@ mod tests {
             CnfTerm::new_finite(1),
         ])
         .unwrap();
-        assert_eq!(omega.clone() + one.clone(), omega_plus_one);
+        assert_eq!(omega.clone() + one, omega_plus_one);
 
         // Test omega + omega
         let two_omega =
@@ -1314,7 +1313,7 @@ mod tests {
         // Test finite + transfinite
         let omega_plus_two = omega.successor().successor();
         assert_eq!(two.clone() + omega.clone(), omega);
-        assert_eq!(omega.clone() + two.clone(), omega_plus_two);
+        assert_eq!(omega + two, omega_plus_two);
     }
 
     #[test]
@@ -1323,16 +1322,16 @@ mod tests {
         let two = Ordinal::new_finite(2);
         let three = Ordinal::new_finite(3);
         assert_eq!(two.clone() * three.clone(), Ordinal::new_finite(6));
-        assert_eq!(three.clone() * two.clone(), Ordinal::new_finite(6));
+        assert_eq!(three * two.clone(), Ordinal::new_finite(6));
 
         // Test edge cases
         let zero = Ordinal::zero();
         let one = Ordinal::one();
         assert_eq!(zero.clone() * one.clone(), Ordinal::zero());
-        assert_eq!(one.clone() * zero.clone(), Ordinal::zero());
+        assert_eq!(one.clone() * zero, Ordinal::zero());
         assert_eq!(one.clone() * one.clone(), Ordinal::one());
         assert_eq!(two.clone() * one.clone(), Ordinal::new_finite(2));
-        assert_eq!(one.clone() * two.clone(), Ordinal::new_finite(2));
+        assert_eq!(one * two.clone(), Ordinal::new_finite(2));
 
         // Test transfinite ordinal multiplication
         let omega = Ordinal::omega();
@@ -1349,7 +1348,7 @@ mod tests {
         let two_omega =
             Ordinal::new_transfinite(&[CnfTerm::new(&Ordinal::one(), 2).unwrap()]).unwrap();
         assert_eq!(two.clone() * omega.clone(), omega);
-        assert_eq!(omega.clone() * two.clone(), two_omega);
+        assert_eq!(omega * two, two_omega);
     }
 
     #[test]
