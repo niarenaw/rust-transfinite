@@ -1,6 +1,3 @@
-// TODO: add examples from
-// https://theory.stanford.edu/~tingz/talks/
-
 #[cfg(test)]
 mod tests {
 
@@ -16,7 +13,7 @@ mod tests {
 
         // (ω² + ω + 1) * (ω³ + ω)
         let lhs = &omega_2 + &omega + Ordinal::one();
-        let rhs = omega_3.clone() + omega;
+        let rhs = omega_3 + omega;
 
         let expr = lhs * rhs;
 

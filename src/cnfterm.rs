@@ -1,6 +1,5 @@
 use crate::error::{OrdinalError, Result};
 use crate::ordinal::Ordinal;
-use std::cmp::{Ord, PartialOrd};
 
 /// A term in Cantor Normal Form representing ω^exponent · multiplicity.
 ///
@@ -141,7 +140,7 @@ impl CnfTerm {
     /// Creates a finite CNF term (ω^0 · n = n).
     ///
     /// This is a convenience constructor for creating terms that represent finite numbers.
-    /// Equivalent to `CnfTerm::new(&Ordinal::Finite(0), n).unwrap()`.
+    /// Constructs the term directly, bypassing `Result` machinery.
     ///
     /// # Arguments
     ///
@@ -161,7 +160,11 @@ impl CnfTerm {
     ///
     /// Panics if `n` is 0, as multiplicity must be positive.
     pub fn new_finite(n: u32) -> Self {
-        CnfTerm::new(&Ordinal::Finite(0), n).unwrap()
+        assert!(n > 0, "CnfTerm multiplicity must be positive, got 0");
+        CnfTerm {
+            exponent: Ordinal::Finite(0),
+            multiplicity: n,
+        }
     }
 
     /// Returns the exponent of this CNF term.
@@ -208,6 +211,38 @@ impl CnfTerm {
         self.multiplicity
     }
 
+    /// Creates a CNF term by taking ownership of the exponent, avoiding a clone.
+    ///
+    /// This is the internal counterpart to [`CnfTerm::new`] for use in arithmetic
+    /// operations where the exponent is already an owned value.
+    pub(crate) fn from_parts(exponent: Ordinal, multiplicity: u32) -> Result<Self> {
+        if multiplicity == 0 {
+            return Err(OrdinalError::CnfTermConstructionError);
+        }
+        Ok(CnfTerm {
+            exponent,
+            multiplicity,
+        })
+    }
+
+    /// Consumes this term and returns the exponent and multiplicity.
+    ///
+    /// Use this when you need owned access to the exponent without cloning.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::{CnfTerm, Ordinal};
+    ///
+    /// let term = CnfTerm::new(&Ordinal::one(), 5).unwrap();
+    /// let (exponent, multiplicity) = term.into_parts();
+    /// assert_eq!(exponent, Ordinal::one());
+    /// assert_eq!(multiplicity, 5);
+    /// ```
+    pub fn into_parts(self) -> (Ordinal, u32) {
+        (self.exponent, self.multiplicity)
+    }
+
     /// Returns `true` if this term represents a limit ordinal.
     ///
     /// A CNF term represents a limit ordinal if its exponent is non-zero.
@@ -231,10 +266,7 @@ impl CnfTerm {
     /// - ω^0 · c = c (finite, a successor ordinal if c > 0)
     /// - ω^n · c where n > 0 (transfinite, a limit ordinal)
     pub fn is_limit(&self) -> bool {
-        // A CNF term represents a limit ordinal if its exponent is non-zero
-        // ω^0 · c = c (finite, successor ordinal)
-        // ω^n · c where n > 0 (transfinite, limit ordinal)
-        !matches!(self.exponent, Ordinal::Finite(0))
+        !self.is_finite()
     }
 
     /// Returns `true` if this term represents a successor ordinal.
@@ -255,8 +287,7 @@ impl CnfTerm {
     /// assert!(!omega_term.is_successor());
     /// ```
     pub fn is_successor(&self) -> bool {
-        // A CNF term represents a successor ordinal if its exponent is zero
-        matches!(self.exponent, Ordinal::Finite(0))
+        self.is_finite()
     }
 
     /// Returns `true` if this term represents a finite ordinal.
@@ -281,25 +312,23 @@ impl CnfTerm {
 
 impl std::fmt::Display for CnfTerm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let exponent = self.exponent();
-        let multiplicity = self.multiplicity();
+        let exponent = self.exponent_ref();
 
-        if matches!(exponent, Ordinal::Finite(0)) {
-            return write!(f, "{}", multiplicity);
+        if self.is_finite() {
+            return write!(f, "{}", self.multiplicity);
         }
 
-        let mut result = String::new();
-        result.push('ω');
+        write!(f, "ω")?;
 
         if !matches!(exponent, Ordinal::Finite(1)) {
-            result.push_str(&format!("^{}", self.exponent()));
+            write!(f, "^{exponent}")?;
         }
 
-        if multiplicity != 1 {
-            result.push_str(&format!(" * {}", self.multiplicity()));
+        if self.multiplicity != 1 {
+            write!(f, " * {}", self.multiplicity)?;
         }
 
-        write!(f, "{}", result)
+        Ok(())
     }
 }
 
@@ -311,9 +340,9 @@ impl PartialOrd for CnfTerm {
 
 impl Ord for CnfTerm {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.exponent()
-            .cmp(&other.exponent())
-            .then_with(|| self.multiplicity().cmp(&other.multiplicity()))
+        self.exponent_ref()
+            .cmp(other.exponent_ref())
+            .then_with(|| self.multiplicity.cmp(&other.multiplicity))
     }
 }
 
