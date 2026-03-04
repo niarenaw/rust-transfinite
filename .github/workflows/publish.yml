@@ -1,0 +1,37 @@
+name: Publish to crates.io
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Run the full CI suite before publishing
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Verify tag matches Cargo.toml version
+        run: |
+          CARGO_VERSION="v$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')"
+          if [ "$CARGO_VERSION" != "${{ github.ref_name }}" ]; then
+            echo "Tag ${{ github.ref_name }} does not match Cargo.toml version $CARGO_VERSION"
+            exit 1
+          fi
+
+      - name: Publish to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
