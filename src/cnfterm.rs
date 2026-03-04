@@ -211,6 +211,20 @@ impl CnfTerm {
         self.multiplicity
     }
 
+    /// Creates a CNF term by taking ownership of the exponent, avoiding a clone.
+    ///
+    /// This is the internal counterpart to [`CnfTerm::new`] for use in arithmetic
+    /// operations where the exponent is already an owned value.
+    pub(crate) fn from_parts(exponent: Ordinal, multiplicity: u32) -> Result<Self> {
+        if multiplicity == 0 {
+            return Err(OrdinalError::CnfTermConstructionError);
+        }
+        Ok(CnfTerm {
+            exponent,
+            multiplicity,
+        })
+    }
+
     /// Consumes this term and returns the exponent and multiplicity.
     ///
     /// Use this when you need owned access to the exponent without cloning.
@@ -252,10 +266,7 @@ impl CnfTerm {
     /// - ω^0 · c = c (finite, a successor ordinal if c > 0)
     /// - ω^n · c where n > 0 (transfinite, a limit ordinal)
     pub fn is_limit(&self) -> bool {
-        // A CNF term represents a limit ordinal if its exponent is non-zero
-        // ω^0 · c = c (finite, successor ordinal)
-        // ω^n · c where n > 0 (transfinite, limit ordinal)
-        !matches!(self.exponent, Ordinal::Finite(0))
+        !self.is_finite()
     }
 
     /// Returns `true` if this term represents a successor ordinal.
@@ -276,8 +287,7 @@ impl CnfTerm {
     /// assert!(!omega_term.is_successor());
     /// ```
     pub fn is_successor(&self) -> bool {
-        // A CNF term represents a successor ordinal if its exponent is zero
-        matches!(self.exponent, Ordinal::Finite(0))
+        self.is_finite()
     }
 
     /// Returns `true` if this term represents a finite ordinal.
@@ -304,7 +314,7 @@ impl std::fmt::Display for CnfTerm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let exponent = self.exponent_ref();
 
-        if matches!(exponent, Ordinal::Finite(0)) {
+        if self.is_finite() {
             return write!(f, "{}", self.multiplicity);
         }
 

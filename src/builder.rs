@@ -55,11 +55,6 @@ impl OrdinalBuilder {
             return self;
         }
 
-        if multiplicity == 0 {
-            self.error = Some(OrdinalError::CnfTermConstructionError);
-            return self;
-        }
-
         if let Some(ref last) = self.last_exponent {
             if exponent >= *last {
                 self.error = Some(OrdinalError::TransfiniteConstructionError);
@@ -68,6 +63,10 @@ impl OrdinalBuilder {
         }
 
         let term = if exponent == Ordinal::zero() {
+            if multiplicity == 0 {
+                self.error = Some(OrdinalError::CnfTermConstructionError);
+                return self;
+            }
             CnfTerm::new_finite(multiplicity)
         } else {
             match CnfTerm::new(&exponent, multiplicity) {
@@ -229,7 +228,7 @@ impl OrdinalBuilder {
             return Ok(Ordinal::new_finite(self.terms[0].multiplicity()));
         }
 
-        Ordinal::new_transfinite(&self.terms)
+        Ok(Ordinal::transfinite_unchecked(self.terms))
     }
 
     /// Builds the ordinal, panicking on any error.
