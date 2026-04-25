@@ -50,3 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial public release with ordinal arithmetic up to ε₀.
+
+[0.2.2]: https://github.com/niarenaw/rust-transfinite/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/niarenaw/rust-transfinite/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/niarenaw/rust-transfinite/releases/tag/v0.2.0

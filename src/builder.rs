@@ -48,8 +48,29 @@ impl OrdinalBuilder {
 
     /// Adds a CNF term with the given exponent and multiplicity.
     ///
-    /// Terms must be added in strictly decreasing exponent order.
-    /// If a term violates ordering or has zero multiplicity, an error is stored.
+    /// This is the lowest-level builder method; the convenience methods (`omega`,
+    /// `omega_power`, `omega_exp`, `plus`, and friends) all delegate to it. Reach
+    /// for `term` directly only when none of the convenience methods fit your
+    /// use case.
+    ///
+    /// Terms must be added in strictly decreasing exponent order. If a term
+    /// violates ordering or has zero multiplicity, the error is stored on the
+    /// builder and surfaced when [`build`](Self::build) is called rather than
+    /// panicking inline.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// // ω² · 3 - equivalent to .omega_power_times(2, 3) but spelled in full.
+    /// let ordinal = Ordinal::builder()
+    ///     .term(Ordinal::new_finite(2), 3)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// assert!(ordinal.is_transfinite());
+    /// ```
     pub fn term(mut self, exponent: Ordinal, multiplicity: u32) -> Self {
         if self.error.is_some() {
             return self;
