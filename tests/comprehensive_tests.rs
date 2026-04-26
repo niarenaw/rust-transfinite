@@ -815,4 +815,88 @@ mod integration_tests {
         let exp = omega.clone().pow(omega_squared);
         assert_eq!(two.pow(exp.clone()), omega.pow(exp));
     }
+
+    // ========================================
+    // COMPARISON: SHARED LEADING TERM
+    // ========================================
+    //
+    // Existing comparison tests focus on different leading terms or different
+    // arity. These exercise the recursive lexicographic compare path where the
+    // leading term is identical and the difference lies further down the CNF.
+
+    #[test]
+    fn test_comparison_same_leading_term_differing_multiplicity() {
+        // ω² + ω vs ω² + ω·2 - same first two exponent layers, multiplicity differs.
+        let lhs = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(1)
+            .build()
+            .unwrap();
+        let rhs = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(2)
+            .build()
+            .unwrap();
+        assert!(lhs < rhs);
+        assert!(rhs > lhs);
+    }
+
+    #[test]
+    fn test_comparison_same_leading_term_finite_vs_omega_tail() {
+        // ω² + 5 vs ω² + ω - finite tail loses to any transfinite tail.
+        let lhs = Ordinal::builder().omega_power(2).plus(5).build().unwrap();
+        let rhs = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(1)
+            .build()
+            .unwrap();
+        assert!(lhs < rhs);
+    }
+
+    #[test]
+    fn test_comparison_same_leading_term_differing_finite_tail() {
+        // ω² + ω + 5 vs ω² + ω + 100 - everything matches except trailing finite.
+        let lhs = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(1)
+            .plus(5)
+            .build()
+            .unwrap();
+        let rhs = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(1)
+            .plus(100)
+            .build()
+            .unwrap();
+        assert!(lhs < rhs);
+    }
+
+    #[test]
+    fn test_comparison_same_leading_strict_prefix() {
+        // ω² < ω² + 1 - shared leading term, rhs has extra trailing term.
+        let lhs = Ordinal::builder().omega_power(2).build().unwrap();
+        let rhs = Ordinal::builder().omega_power(2).plus(1).build().unwrap();
+        assert!(lhs < rhs);
+    }
+
+    // ========================================
+    // DEEP EXPONENT DISPLAY
+    // ========================================
+
+    #[test]
+    fn test_deep_exponent_display() {
+        // ω^(ω^(ω+1)) - three nested levels exercise the recursive Display path.
+        let omega = Ordinal::omega();
+        let omega_plus_one = omega.successor();
+        let inner = omega.clone().pow(omega_plus_one);
+        let nested = omega.pow(inner);
+
+        let formatted = format!("{}", nested);
+
+        // Sanity: contains omega glyph and an exponent marker.
+        assert!(formatted.contains('ω'), "expected ω in: {formatted}");
+        assert!(formatted.contains('^'), "expected ^ in: {formatted}");
+        // The innermost ω+1 should still be visible.
+        assert!(formatted.contains("+ 1"), "expected '+ 1' in: {formatted}");
+    }
 }
