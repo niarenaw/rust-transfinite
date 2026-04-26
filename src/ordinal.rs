@@ -897,8 +897,17 @@ impl Mul<&Ordinal> for &Ordinal {
 ///
 /// # Panics
 ///
-/// Panics on finite base with a transfinite exponent whose leading term has a
-/// transfinite exponent itself (e.g., `2^(ω^ω·3)`). This case is not yet implemented.
+/// Panics when the base is finite (≥ 2) and the exponent is transfinite with
+/// a CNF term `ω^β · k` where `β` is itself transfinite. Examples:
+///
+/// - `2.pow(ω^ω · 3)`           - β = ω
+/// - `2.pow(ω^(ω+1))`           - β = ω+1
+/// - `2.pow(ω^ω + 5)`           - the leading term has β = ω
+///
+/// All other shapes are supported, including transfinite-base exponentiation
+/// like `ω.pow(ω^ω)` and finite-base with finite-tower exponents like
+/// `2.pow(ω^5 · 3)`. Implementation of the panicking case is tracked for a
+/// future release.
 impl Pow<Ordinal> for Ordinal {
     type Output = Self;
 
