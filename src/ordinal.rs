@@ -894,20 +894,6 @@ impl Mul<&Ordinal> for &Ordinal {
 ///
 /// Finite ordinal exponentiation uses saturating arithmetic. Computing `m^n` for
 /// finite ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
-///
-/// # Panics
-///
-/// Panics when the base is finite (≥ 2) and the exponent is transfinite with
-/// a CNF term `ω^β · k` where `β` is itself transfinite. Examples:
-///
-/// - `2.pow(ω^ω · 3)`           - β = ω
-/// - `2.pow(ω^(ω+1))`           - β = ω+1
-/// - `2.pow(ω^ω + 5)`           - the leading term has β = ω
-///
-/// All other shapes are supported, including transfinite-base exponentiation
-/// like `ω.pow(ω^ω)` and finite-base with finite-tower exponents like
-/// `2.pow(ω^5 · 3)`. Implementation of the panicking case is tracked for a
-/// future release.
 impl Pow<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -999,7 +985,21 @@ impl Pow<Ordinal> for Ordinal {
                                 )
                                 .expect("positive multiplicity for outer term")]);
                         } else {
-                            todo!("finite base with transfinite tower exponent (e.g., 2^(ω^ω·3))")
+                            // n^(ω^e · k) = ω^(ω^e · k) for transfinite e. The decrement
+                            // that the finite-e branch performs collapses here because
+                            // 1 + e = e for any transfinite e (left absorption of finite
+                            // into transfinite), so ω^(e-1) and ω^e coincide on this path.
+                            //
+                            // Reference: Carneiro,
+                            // https://math.stackexchange.com/q/2588262
+                            let inner_exp =
+                                Ordinal::transfinite_unchecked(vec![CnfTerm::from_parts(e, k)
+                                    .expect("positive multiplicity for inner exponent")]);
+                            distributed = distributed
+                                * Ordinal::transfinite_unchecked(vec![CnfTerm::from_parts(
+                                    inner_exp, 1,
+                                )
+                                .expect("positive multiplicity for outer term")]);
                         }
                     }
                 }
