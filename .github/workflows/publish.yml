@@ -13,6 +13,13 @@ jobs:
   ci:
     name: CI
     uses: ./.github/workflows/ci.yml
+    # Reusable workflows can only request permissions that the calling job grants.
+    # The audit job inside ci.yml needs checks: write to post its result; without
+    # this block GitHub rejects the whole workflow at startup with
+    # "nested job 'audit' is requesting 'checks: write', but is only allowed 'checks: none'".
+    permissions:
+      contents: read
+      checks: write
 
   publish:
     name: Publish
