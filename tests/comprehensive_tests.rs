@@ -739,4 +739,80 @@ mod integration_tests {
         assert!(ord1 < omega_omega);
         assert!(omega_omega < ord2);
     }
+
+    // ========================================
+    // FINITE-BASE TRANSFINITE-TOWER EXPONENTIATION
+    // ========================================
+    //
+    // Pre-0.3.0, raising a finite base ≥ 2 to an exponent containing a CNF
+    // term ω^β · v with β itself transfinite would hit a todo!() panic.
+    // The implementation rule, drawn from Carneiro's MathStackExchange answer
+    // (https://math.stackexchange.com/q/2588262) and Madore's reference Haskell
+    // code, is: for transfinite β, n^(ω^β · v) = ω^(ω^β · v) - the decrement
+    // present in the finite-β branch collapses because 1 + β = β.
+    //
+    // Verification strategy: each test computes 2^X via the new path and
+    // compares to ω^X computed via the existing transfinite-base path.
+    // Equality across these two independently derived expressions confirms
+    // the formula end-to-end.
+
+    #[test]
+    fn test_finite_pow_omega_to_omega() {
+        // 2^(ω^ω) = ω^(ω^ω)
+        let two = Ordinal::new_finite(2);
+        let omega = Ordinal::omega();
+        let omega_omega = omega.clone().pow(omega.clone());
+        assert_eq!(two.pow(omega_omega.clone()), omega.pow(omega_omega));
+    }
+
+    #[test]
+    fn test_finite_pow_omega_omega_times_three() {
+        // 2^(ω^ω · 3) = ω^(ω^ω · 3) - the exact case the original review
+        // surfaced as the panicking input.
+        let two = Ordinal::new_finite(2);
+        let omega = Ordinal::omega();
+        let omega_omega = omega.clone().pow(omega.clone());
+        let exp = omega_omega * Ordinal::new_finite(3);
+        assert_eq!(two.pow(exp.clone()), omega.pow(exp));
+    }
+
+    #[test]
+    fn test_finite_pow_omega_to_omega_plus_one() {
+        // 2^(ω^(ω+1)) = ω^(ω^(ω+1)) - confirms "no decrement" is correct
+        // for transfinite successors, not only transfinite limits.
+        let two = Ordinal::new_finite(2);
+        let omega = Ordinal::omega();
+        let exp = omega.clone().pow(omega.successor());
+        assert_eq!(two.pow(exp.clone()), omega.pow(exp));
+    }
+
+    #[test]
+    fn test_finite_pow_mixed_finite_transfinite_terms() {
+        // 2^(ω^ω + ω + 5) = ω^(ω^ω + 1) · 32
+        // Three CNF terms of three different types in the same exponent.
+        // Verifies the loop combines all three contribution types correctly:
+        //   ω^ω · 1   (transfinite e)  → ω^(ω^ω)
+        //   ω · 1     (e = 1)          → ω
+        //   5         (finite term)    → 2^5 = 32
+        // Then ω^(ω^ω) · ω = ω^(ω^ω + 1), and · 32 scales the multiplicity.
+        let two = Ordinal::new_finite(2);
+        let omega = Ordinal::omega();
+        let omega_omega = omega.clone().pow(omega.clone());
+        let exp = omega_omega.clone() + omega.clone() + Ordinal::new_finite(5);
+
+        let result = two.pow(exp);
+        let expected = omega.pow(omega_omega + Ordinal::one()) * Ordinal::new_finite(32);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_finite_pow_omega_squared_inner() {
+        // 2^(ω^(ω²)) = ω^(ω^(ω²)) - confirms the formula doesn't depend on
+        // the inner exponent being structurally simple.
+        let two = Ordinal::new_finite(2);
+        let omega = Ordinal::omega();
+        let omega_squared = omega.clone().pow(Ordinal::new_finite(2));
+        let exp = omega.clone().pow(omega_squared);
+        assert_eq!(two.pow(exp.clone()), omega.pow(exp));
+    }
 }

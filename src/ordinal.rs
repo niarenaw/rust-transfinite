@@ -1014,11 +1014,6 @@ impl Mul<&Ordinal> for &Ordinal {
 ///
 /// Finite ordinal exponentiation uses saturating arithmetic. Computing `m^n` for
 /// finite ordinals that would exceed `u32::MAX` returns `u32::MAX` instead of panicking.
-///
-/// # Panics
-///
-/// Panics on finite base with a transfinite exponent whose leading term has a
-/// transfinite exponent itself (e.g., `2^(ω^ω·3)`). This case is not yet implemented.
 impl Pow<Ordinal> for Ordinal {
     type Output = Self;
 
@@ -1110,7 +1105,21 @@ impl Pow<Ordinal> for Ordinal {
                                 )
                                 .expect("positive multiplicity for outer term")]);
                         } else {
-                            todo!("finite base with transfinite tower exponent (e.g., 2^(ω^ω·3))")
+                            // n^(ω^e · k) = ω^(ω^e · k) for transfinite e. The decrement
+                            // that the finite-e branch performs collapses here because
+                            // 1 + e = e for any transfinite e (left absorption of finite
+                            // into transfinite), so ω^(e-1) and ω^e coincide on this path.
+                            //
+                            // Reference: Carneiro,
+                            // https://math.stackexchange.com/q/2588262
+                            let inner_exp =
+                                Ordinal::transfinite_unchecked(vec![CnfTerm::from_parts(e, k)
+                                    .expect("positive multiplicity for inner exponent")]);
+                            distributed = distributed
+                                * Ordinal::transfinite_unchecked(vec![CnfTerm::from_parts(
+                                    inner_exp, 1,
+                                )
+                                .expect("positive multiplicity for outer term")]);
                         }
                     }
                 }
