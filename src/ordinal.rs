@@ -405,6 +405,36 @@ impl Ordinal {
         matches!(self, Ordinal::Transfinite(_))
     }
 
+    /// Returns `true` if this is the ordinal zero.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// assert!(Ordinal::zero().is_zero());
+    /// assert!(!Ordinal::one().is_zero());
+    /// assert!(!Ordinal::omega().is_zero());
+    /// ```
+    pub fn is_zero(&self) -> bool {
+        matches!(self, Ordinal::Finite(0))
+    }
+
+    /// Returns `true` if this is the ordinal one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// assert!(Ordinal::one().is_one());
+    /// assert!(!Ordinal::zero().is_one());
+    /// assert!(!Ordinal::omega().is_one());
+    /// ```
+    pub fn is_one(&self) -> bool {
+        matches!(self, Ordinal::Finite(1))
+    }
+
     /// Returns the leading (highest-order) CNF term, if this is a transfinite ordinal.
     ///
     /// For transfinite ordinals in CNF, the leading term has the largest exponent and
@@ -433,6 +463,28 @@ impl Ordinal {
         match self {
             Ordinal::Finite(_) => None,
             Ordinal::Transfinite(terms) => terms.first().cloned(),
+        }
+    }
+
+    /// Returns a reference to the leading CNF term, avoiding the clone that
+    /// [`leading_cnf_term`](Self::leading_cnf_term) performs.
+    ///
+    /// Prefer this method when you only need to inspect the leading term and
+    /// do not need to keep an owned copy.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::omega();
+    /// let leading = omega.leading_cnf_term_ref().unwrap();
+    /// assert_eq!(leading.multiplicity(), 1);
+    /// ```
+    pub fn leading_cnf_term_ref(&self) -> Option<&CnfTerm> {
+        match self {
+            Ordinal::Finite(_) => None,
+            Ordinal::Transfinite(terms) => terms.first(),
         }
     }
 
@@ -466,6 +518,25 @@ impl Ordinal {
         match self {
             Ordinal::Finite(_) => None,
             Ordinal::Transfinite(terms) => terms.last().cloned(),
+        }
+    }
+
+    /// Reference-returning variant of [`trailing_cnf_term`](Self::trailing_cnf_term);
+    /// see [`leading_cnf_term_ref`](Self::leading_cnf_term_ref) for the rationale.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega_plus_one = Ordinal::omega().successor();
+    /// let trailing = omega_plus_one.trailing_cnf_term_ref().unwrap();
+    /// assert_eq!(trailing.multiplicity(), 1);
+    /// ```
+    pub fn trailing_cnf_term_ref(&self) -> Option<&CnfTerm> {
+        match self {
+            Ordinal::Finite(_) => None,
+            Ordinal::Transfinite(terms) => terms.last(),
         }
     }
 
@@ -505,6 +576,31 @@ impl Ordinal {
         }
     }
 
+    /// Returns an iterator over the CNF terms without cloning.
+    ///
+    /// For finite ordinals the iterator is empty. For transfinite ordinals it
+    /// yields each term in CNF order (decreasing exponent). Prefer this over
+    /// [`cnf_terms`](Self::cnf_terms) when you only need to walk the terms
+    /// once.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use transfinite::Ordinal;
+    ///
+    /// let omega = Ordinal::omega();
+    /// assert_eq!(omega.cnf_terms_iter().count(), 1);
+    ///
+    /// let five = Ordinal::new_finite(5);
+    /// assert_eq!(five.cnf_terms_iter().count(), 0);
+    /// ```
+    pub fn cnf_terms_iter(&self) -> std::slice::Iter<'_, CnfTerm> {
+        match self {
+            Ordinal::Finite(_) => [].iter(),
+            Ordinal::Transfinite(terms) => terms.iter(),
+        }
+    }
+
     /// Returns the ordinal zero (0).
     ///
     /// Zero is the smallest ordinal and the only finite limit ordinal.
@@ -519,8 +615,8 @@ impl Ordinal {
     /// assert!(zero.is_limit());
     /// assert!(zero.is_finite());
     /// ```
-    pub fn zero() -> Self {
-        Ordinal::new_finite(0)
+    pub const fn zero() -> Self {
+        Ordinal::Finite(0)
     }
 
     /// Returns the ordinal one (1).
@@ -537,8 +633,8 @@ impl Ordinal {
     /// assert_eq!(one, Ordinal::zero().successor());
     /// assert!(one.is_successor());
     /// ```
-    pub fn one() -> Self {
-        Ordinal::new_finite(1)
+    pub const fn one() -> Self {
+        Ordinal::Finite(1)
     }
 
     /// Returns omega (ω), the first infinite ordinal.
@@ -638,6 +734,30 @@ impl std::fmt::Display for Ordinal {
 impl From<u32> for Ordinal {
     fn from(n: u32) -> Self {
         Ordinal::new_finite(n)
+    }
+}
+
+/// Identity for ordinal addition. Enables generic algorithms that need a
+/// zero value via [`num_traits::Zero`].
+impl num_traits::Zero for Ordinal {
+    fn zero() -> Self {
+        Ordinal::zero()
+    }
+
+    fn is_zero(&self) -> bool {
+        Ordinal::is_zero(self)
+    }
+}
+
+/// Identity for ordinal multiplication. Enables generic algorithms that need
+/// a one value via [`num_traits::One`].
+impl num_traits::One for Ordinal {
+    fn one() -> Self {
+        Ordinal::one()
+    }
+
+    fn is_one(&self) -> bool {
+        Ordinal::is_one(self)
     }
 }
 
@@ -1422,5 +1542,99 @@ mod tests {
             ordinal.unwrap_err(),
             OrdinalError::TransfiniteConstructionError
         ));
+    }
+
+    #[test]
+    fn test_is_zero() {
+        assert!(Ordinal::zero().is_zero());
+        assert!(!Ordinal::one().is_zero());
+        assert!(!Ordinal::new_finite(42).is_zero());
+        assert!(!Ordinal::omega().is_zero());
+    }
+
+    #[test]
+    fn test_is_one() {
+        assert!(Ordinal::one().is_one());
+        assert!(!Ordinal::zero().is_one());
+        assert!(!Ordinal::new_finite(42).is_one());
+        assert!(!Ordinal::omega().is_one());
+    }
+
+    #[test]
+    fn test_zero_one_are_const() {
+        const Z: Ordinal = Ordinal::zero();
+        const O: Ordinal = Ordinal::one();
+        assert_eq!(Z, Ordinal::new_finite(0));
+        assert_eq!(O, Ordinal::new_finite(1));
+    }
+
+    #[test]
+    fn test_num_traits_zero_one() {
+        use num_traits::{One, Zero};
+        assert_eq!(<Ordinal as Zero>::zero(), Ordinal::zero());
+        assert!(<Ordinal as Zero>::zero().is_zero());
+        assert!(!<Ordinal as Zero>::is_zero(&Ordinal::one()));
+
+        assert_eq!(<Ordinal as One>::one(), Ordinal::one());
+        assert!(<Ordinal as One>::is_one(&Ordinal::one()));
+        assert!(!<Ordinal as One>::is_one(&Ordinal::zero()));
+    }
+
+    #[test]
+    fn test_leading_cnf_term_ref() {
+        let omega = Ordinal::omega();
+        let leading = omega
+            .leading_cnf_term_ref()
+            .expect("omega has a leading term");
+        assert_eq!(leading.multiplicity(), 1);
+
+        // Returned reference matches the cloning variant.
+        assert_eq!(
+            omega.leading_cnf_term_ref().cloned(),
+            omega.leading_cnf_term()
+        );
+
+        // Finite ordinals have no terms.
+        assert!(Ordinal::new_finite(5).leading_cnf_term_ref().is_none());
+    }
+
+    #[test]
+    fn test_trailing_cnf_term_ref() {
+        let ordinal = Ordinal::new_transfinite(&[
+            CnfTerm::new(&Ordinal::new_finite(2), 1).unwrap(),
+            CnfTerm::new_finite(7),
+        ])
+        .unwrap();
+        let trailing = ordinal.trailing_cnf_term_ref().expect("has trailing term");
+        assert_eq!(trailing.multiplicity(), 7);
+
+        // Returned reference matches the cloning variant.
+        assert_eq!(
+            ordinal.trailing_cnf_term_ref().cloned(),
+            ordinal.trailing_cnf_term()
+        );
+
+        // Finite ordinals have no terms.
+        assert!(Ordinal::new_finite(5).trailing_cnf_term_ref().is_none());
+    }
+
+    #[test]
+    fn test_cnf_terms_iter() {
+        let omega = Ordinal::omega();
+        assert_eq!(omega.cnf_terms_iter().count(), 1);
+
+        // Finite ordinals iterate over zero terms.
+        assert_eq!(Ordinal::new_finite(5).cnf_terms_iter().count(), 0);
+        assert_eq!(Ordinal::zero().cnf_terms_iter().count(), 0);
+
+        // Iterator order matches cnf_terms vector order.
+        let three_term = Ordinal::builder()
+            .omega_power(2)
+            .omega_times(3)
+            .plus(7)
+            .build()
+            .unwrap();
+        let from_iter: Vec<CnfTerm> = three_term.cnf_terms_iter().cloned().collect();
+        assert_eq!(Some(from_iter), three_term.cnf_terms());
     }
 }

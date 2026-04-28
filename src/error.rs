@@ -19,6 +19,7 @@ use thiserror::Error;
 /// assert!(matches!(result, Err(OrdinalError::TransfiniteConstructionError)));
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[non_exhaustive]
 pub enum OrdinalError {
     /// Error when constructing a CNF term with invalid parameters.
     ///
