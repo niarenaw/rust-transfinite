@@ -12,6 +12,7 @@ homepage = "https://github.com/niarenaw/rust-transfinite"
 keywords = ["ordinal", "transfinite", "mathematics", "cantor", "ordinal-arithmetic"]
 categories = ["mathematics", "algorithms"]
 rust-version = "1.81"
+exclude = ["**/CLAUDE.md", ".github/"]
 
 [dependencies]
 num-traits = "0.2.19"
