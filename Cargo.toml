@@ -19,7 +19,12 @@ thiserror = "2.0.11"
 
 [dev-dependencies]
 proptest = "1.4"
+criterion = "0.4"
 cargo-husky = { version = "1", default-features = false, features = ["precommit-hook", "run-cargo-fmt", "run-cargo-clippy"] }
+
+[[bench]]
+name = "ordinal_bench"
+harness = false
 
 [lints.rust]
 future-incompatible = "warn"
