@@ -341,3 +341,46 @@ fn test_reference_exponentiation() {
     assert_eq!((&two).pow(three.clone()), Ordinal::new_finite(8));
     assert_eq!(two.pow(three), Ordinal::new_finite(8));
 }
+
+// ========================================
+// SATURATING ARITHMETIC AT u32::MAX
+// ========================================
+//
+// Finite ordinal arithmetic is documented to saturate at u32::MAX rather than
+// panic on overflow. These tests pin the contract at the boundary so a future
+// switch to checked or wrapping arithmetic would fail loudly here.
+
+#[test]
+fn test_finite_pow_saturates_at_max() {
+    let big = Ordinal::new_finite(u32::MAX);
+    let two = Ordinal::new_finite(2);
+    assert_eq!(big.pow(two), Ordinal::new_finite(u32::MAX));
+}
+
+#[test]
+fn test_finite_pow_large_exponent_saturates() {
+    // 2^32 already exceeds u32::MAX; 2^1000 must saturate.
+    let two = Ordinal::new_finite(2);
+    let thousand = Ordinal::new_finite(1000);
+    assert_eq!(two.pow(thousand), Ordinal::new_finite(u32::MAX));
+}
+
+#[test]
+fn test_finite_mul_saturates_at_max() {
+    let big = Ordinal::new_finite(u32::MAX);
+    let two = Ordinal::new_finite(2);
+    assert_eq!(big * two, Ordinal::new_finite(u32::MAX));
+}
+
+#[test]
+fn test_finite_add_saturates_at_max() {
+    let big = Ordinal::new_finite(u32::MAX);
+    let one = Ordinal::one();
+    assert_eq!(big + one, Ordinal::new_finite(u32::MAX));
+}
+
+#[test]
+fn test_finite_successor_saturates_at_max() {
+    let big = Ordinal::new_finite(u32::MAX);
+    assert_eq!(big.successor(), Ordinal::new_finite(u32::MAX));
+}

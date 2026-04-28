@@ -1,6 +1,6 @@
 [package]
 name = "transfinite"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 authors = ["niarenaw"]
 license = "MIT OR Apache-2.0"
@@ -12,6 +12,7 @@ homepage = "https://github.com/niarenaw/rust-transfinite"
 keywords = ["ordinal", "transfinite", "mathematics", "cantor", "ordinal-arithmetic"]
 categories = ["mathematics", "algorithms"]
 rust-version = "1.81"
+exclude = ["**/CLAUDE.md", ".github/"]
 
 [dependencies]
 num-traits = "0.2.19"
@@ -19,7 +20,12 @@ thiserror = "2.0.11"
 
 [dev-dependencies]
 proptest = "1.4"
+criterion = "0.4"
 cargo-husky = { version = "1", default-features = false, features = ["precommit-hook", "run-cargo-fmt", "run-cargo-clippy"] }
+
+[[bench]]
+name = "ordinal_bench"
+harness = false
 
 [lints.rust]
 future-incompatible = "warn"
